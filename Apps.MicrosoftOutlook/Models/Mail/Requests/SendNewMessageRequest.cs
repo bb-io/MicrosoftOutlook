@@ -1,0 +1,13 @@
+﻿using Blackbird.Applications.Sdk.Common;
+
+namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
+
+public class SendNewMessageRequest
+{
+    public string Subject { get; set; }
+    
+    public string Content { get; set; }
+    
+    [Display("Recipient emails")]
+    public IEnumerable<string> RecipientEmails { get; set; }
+}
