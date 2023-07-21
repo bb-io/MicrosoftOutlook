@@ -14,33 +14,44 @@ public class MailActions
 {
     #region GET
 
-    [Action("Mail: list most recent messages", Description = "List the most recent messages. If the messages amount to " +
-                                                             "display is not specified, the ten most recent messages are " +
-                                                             "listed. Messages amount must be within the range of 1 and " +
-                                                             "1000. To retrieve messages from specific mail folder, " +
-                                                             "specify mail folder ID.")]
+    [Action("Mail: list most recent messages", Description = "List messages received during past hours. If number of " +
+                                                             "hours is not specified, messages received during past 24 " +
+                                                             "hours are listed. To retrieve messages from specific mail " +
+                                                             "folder, specify mail folder ID.")]
     public async Task<ListRecentMessagesResponse> ListRecentMessages(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListRecentMessagesRequest request)
     {
-        if (request.MessagesAmount < 1 || request.MessagesAmount > 1000)
-            throw new ArgumentException("Messages amount must be within the range of 1 and 1000");
-
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         MessageCollectionResponse? messages;
+        var messagesList = new List<Message>();
+        var startDateTime = (DateTime.Now - TimeSpan.FromHours(request.Hours ?? 24)).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+        var requestFilter = $"sentDateTime ge {startDateTime}";
+        var skipMessagesAmount = 0;
         try
         {
-            if (request.MailFolderId == null)
-                messages = await client.Me.Messages.GetAsync(requestConfiguration => 
-                    requestConfiguration.QueryParameters.Top = request.MessagesAmount ?? 10);
-            else
-                messages = await client.Me.MailFolders[request.MailFolderId].Messages.GetAsync(requestConfiguration => 
-                    requestConfiguration.QueryParameters.Top = request.MessagesAmount ?? 10);
+            do
+            {
+                if (request.MailFolderId == null)
+                    messages = await client.Me.Messages.GetAsync(requestConfiguration =>
+                    {
+                        requestConfiguration.QueryParameters.Filter = requestFilter;
+                        requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
+                    });
+                else
+                    messages = await client.Me.MailFolders[request.MailFolderId].Messages.GetAsync(requestConfiguration =>
+                    { 
+                        requestConfiguration.QueryParameters.Filter = requestFilter;
+                        requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
+                    });
+                messagesList.AddRange(messages.Value);
+                skipMessagesAmount += 10;
+            } while (messages.OdataNextLink != null);
         }
         catch (ODataError error)
         {
             throw new ArgumentException(error.Error.Message);
         }
-        var messagesDto = messages.Value.Select(m => new MessageDto(m));
+        var messagesDto = messagesList.Select(m => new MessageDto(m));
         return new ListRecentMessagesResponse
         {
             Messages = messagesDto

@@ -4,9 +4,8 @@ namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
 
 public class ListRecentMessagesRequest
 {
-    [Display("Messages amount")]
-    public int? MessagesAmount { get; set; }
+    public int? Hours { get; set; }
     
-    [Display("Message folder id")]
+    [Display("Message folder ID")]
     public string? MailFolderId { get; set; }
 }
