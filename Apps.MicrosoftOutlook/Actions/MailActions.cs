@@ -230,7 +230,7 @@ public class MailActions
     public async Task<FileAttachmentDto> AttachFileToDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] AttachFileToDraftMessageRequest request)
     {
-        const int threeMegabytesInBytes = 1048576;
+        const int threeMegabytesInBytes = 3145728;
         if (request.File.Length > threeMegabytesInBytes)
             throw new ArgumentException("Size of the file must be under 3 MB.");
         
