@@ -17,7 +17,7 @@ public class MailActions
     [Action("Mail: list most recent messages", Description = "List messages received during past hours. If number of " +
                                                              "hours is not specified, messages received during past 24 " +
                                                              "hours are listed. To retrieve messages from specific mail " +
-                                                             "folder, specify mail folder ID.")]
+                                                             "folder, specify mail folder.")]
     public async Task<ListRecentMessagesResponse> ListRecentMessages(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListRecentMessagesRequest request)
     {
@@ -58,7 +58,7 @@ public class MailActions
         };
     }
 
-    [Action("Mail: get message", Description = "Get message by its ID.")]
+    [Action("Mail: get message", Description = "Retrieve a message from your mailbox.")]
     public async Task<MessageDto> GetMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] GetMessageRequest request)
     {
@@ -75,7 +75,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: list attached files", Description = "Retrieve a list of files attached to a message with specified ID.")]
+    [Action("Mail: list attached files", Description = "Retrieve a list of files attached to a message.")]
     public async Task<ListAttachmentsResponse> ListAttachedFiles(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListAttachedFilesRequest request)
     {
@@ -144,7 +144,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: forward message", Description = "Forward a message with specified ID.")]
+    [Action("Mail: forward message", Description = "Forward a message.")]
     public async Task ForwardMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ForwardMessageRequest request)
     {
@@ -165,7 +165,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: reply to a message", Description = "Reply to the sender of a message with specified ID.")]
+    [Action("Mail: reply to a message", Description = "Reply to the sender of a message.")]
     public async Task ReplyToMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ReplyToMessageRequest request)
     {
@@ -184,7 +184,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: send draft message", Description = "Send an existing draft message with specified ID.")]
+    [Action("Mail: send draft message", Description = "Send an existing draft message.")]
     public async Task SendDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] SendDraftMessageRequest request)
     {

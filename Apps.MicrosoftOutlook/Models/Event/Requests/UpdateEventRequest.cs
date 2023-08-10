@@ -4,9 +4,6 @@ namespace Apps.MicrosoftOutlook.Models.Event.Requests;
 
 public class UpdateEventRequest
 {
-    [Display("Event or event occurrence ID")]
-    public string EventOrEventOccurrenceId { get; set; }
-
     public string? Subject { get; set; }
     
     public string? Location { get; set; }

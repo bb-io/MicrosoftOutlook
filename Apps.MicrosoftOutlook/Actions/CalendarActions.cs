@@ -25,7 +25,7 @@ public class CalendarActions
         };
     }
     
-    [Action("Calendar: get calendar", Description = "Get calendar by ID. If ID is not specified, default calendar is returned.")]
+    [Action("Calendar: get calendar", Description = "Get a calendar. If calendar is not specified, default calendar is returned.")]
     public async Task<CalendarDto> GetCalendar(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] GetCalendarRequest request)
     {
@@ -110,8 +110,8 @@ public class CalendarActions
     
     #region PATCH
 
-    [Action("Calendar: rename calendar", Description = "Rename calendar with specified ID. If ID is not specified, " +
-                                                       "default calendar is renamed.")]
+    [Action("Calendar: rename calendar", Description = "Rename a calendar. If calendar is not specified, default " +
+                                                       "calendar is renamed.")]
     public async Task<CalendarDto> RenameCalendar(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] RenameCalendarRequest request)
     {
@@ -141,7 +141,7 @@ public class CalendarActions
     
     #region DELETE
 
-    [Action("Calendar: delete calendar", Description = "Delete calendar other than the default calendar by ID.")]
+    [Action("Calendar: delete calendar", Description = "Delete calendar other than the default calendar.")]
     public async Task DeleteCalendar(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] DeleteCalendarRequest request)
     {

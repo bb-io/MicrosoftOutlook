@@ -1,10 +1,13 @@
-﻿using Blackbird.Applications.Sdk.Common;
+﻿using Apps.MicrosoftOutlook.DataSourceHandlers;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.MicrosoftOutlook.Models.Event.Requests;
 
 public class CreateEventRequest
 {
-    [Display("Calendar ID")] 
+    [Display("Calendar")] 
+    [DataSource(typeof(CalendarDataSourceHandler))]
     public string? CalendarId { get; set; }
 
     public string Subject { get; set; }
@@ -35,7 +38,8 @@ public class CreateEventRequest
     [Display("Attendee emails")]
     public IEnumerable<string> AttendeeEmails { get; set; }
     
-    [Display("Recurrence pattern: daily/weekly/monthly")]
+    [Display("Recurrence pattern")]
+    [DataSource(typeof(RecurrencePatternDataSourceHandler))]
     public string? RecurrencePattern { get; set; }
 
     [Display("Recurrence interval")] 

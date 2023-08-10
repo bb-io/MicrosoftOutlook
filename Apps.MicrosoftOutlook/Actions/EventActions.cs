@@ -1,9 +1,11 @@
-﻿using Apps.MicrosoftOutlook.Dtos;
+﻿using Apps.MicrosoftOutlook.DataSourceHandlers;
+using Apps.MicrosoftOutlook.Dtos;
 using Apps.MicrosoftOutlook.Models.Event.Requests;
 using Apps.MicrosoftOutlook.Models.Event.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 using HtmlAgilityPack;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
@@ -18,7 +20,7 @@ public class EventActions
     
     #region GET
 
-    [Action("Calendar: list events", Description = "Retrieve a list of events in a calendar. If calendar ID is not " +
+    [Action("Calendar: list events", Description = "Retrieve a list of events in a calendar. If calendar is not " +
                                                    "specified, default calendar's events are listed.")]
     public async Task<ListEventsResponse> ListEvents(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListEventsRequest request) 
@@ -42,7 +44,7 @@ public class EventActions
         };
     }
     
-    [Action("Calendar: get event", Description = "Get information about event by its ID.")]
+    [Action("Calendar: get event", Description = "Get information about an event.")]
     public async Task<EventDto> GetEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] GetEventRequest request) 
     {
@@ -84,8 +86,8 @@ public class EventActions
     
     [Action("Calendar: list recently created events", Description = "Retrieve a list of events created during past hours. " +
                                                                     "If number of hours is not specified, events created " +
-                                                                    "during past 24 hours are listed. If calendar ID is " +
-                                                                    "not specified, default calendar's events are listed.")]
+                                                                    "during past 24 hours are listed. If calendar is not " +
+                                                                    "specified, default calendar's events are listed.")]
     public async Task<ListEventsResponse> ListRecentlyCreatedEvents(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListRecentlyCreatedEventsRequest request) 
     {
@@ -114,8 +116,8 @@ public class EventActions
 
     [Action("Calendar: list recently updated events", Description = "Retrieve a list of events updated during past hours. " +
                                                                     "If number of hours is not specified, events updated " +
-                                                                    "during past 24 hours are listed. If calendar ID is " +
-                                                                    "not specified, default calendar's events are listed.")]
+                                                                    "during past 24 hours are listed. If calendar is not " +
+                                                                    "specified, default calendar's events are listed.")]
     public async Task<ListEventsResponse> ListRecentlyUpdatedEvents(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListRecentlyUpdatedEventsRequest request) 
     {
@@ -146,15 +148,15 @@ public class EventActions
     
     #region POST
     
-    [Action("Calendar: create event in a calendar", Description = "Create a new event in a calendar. If calendar ID is " +
-                                                                  "not specified, the event is created in the default " +
-                                                                  "calendar. If the event is an online meeting, a Microsoft " +
-                                                                  "Teams meeting is automatically created. To create a " +
-                                                                  "recurring event specify recurrence pattern (daily, weekly " +
-                                                                  "or monthly) and interval which can be in days, weeks or " +
-                                                                  "months, depending on recurrence pattern type. If interval " +
-                                                                  "is not specified, it is set to 1. For weekly or monthly " +
-                                                                  "patterns provide days of week on which the event occurs.")]
+    [Action("Calendar: create event in a calendar", Description = "Create a new event in a calendar. If calendar is not " +
+                                                                  "specified, the event is created in the default calendar. " +
+                                                                  "If the event is an online meeting, a Microsoft Teams " +
+                                                                  "meeting is automatically created. To create a recurring " +
+                                                                  "event specify recurrence pattern and interval which " +
+                                                                  "can be in days, weeks or months, depending on recurrence " +
+                                                                  "pattern type. If interval is not specified, it is " +
+                                                                  "set to 1. For weekly or monthly patterns provide days " +
+                                                                  "of week on which the event occurs.")]
     public async Task<EventDto> CreateEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] CreateEventRequest request)
     {
@@ -168,32 +170,20 @@ public class EventActions
             { "friday", DayOfWeekObject.Friday },
             { "saturday", DayOfWeekObject.Saturday }
         };
-        var recurrencePatterns = new Dictionary<string, RecurrencePatternType>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "daily", RecurrencePatternType.Daily },
-            { "weekly", RecurrencePatternType.Weekly },
-            { "monthly", RecurrencePatternType.RelativeMonthly }
-        };
-        var recurrencePattern = request.RecurrencePattern?.ToLower();
 
         if (!IsValidTimeFormat(request.StartTime, out TimeSpan startTime) 
             || !IsValidTimeFormat(request.EndTime, out TimeSpan endTime)) 
             throw new ArgumentException("Time format is not valid.");
 
-        if (recurrencePattern != null)
+        if (request.RecurrencePattern != null)
         {
-            var isValidPattern = recurrencePatterns.Keys.Contains(recurrencePattern);
-            if (!isValidPattern)
-                throw new ArgumentException($"Recurrence pattern '{recurrencePattern}' is not valid. Please choose " +
-                                            "one of the following: daily, weekly or monthly");
-            
             if (request.Interval < 1) 
                 throw new ArgumentException("Recurrence interval must be greater than zero.");
             
-            if (recurrencePattern != "daily" && (request.DaysOfWeek == null || !request.DaysOfWeek.Any()))
+            if (request.RecurrencePattern != "Daily" && (request.DaysOfWeek == null || !request.DaysOfWeek.Any()))
                 throw new ArgumentException("For weekly and monthly recurrence patterns days of week should be specified.");
 
-            if (recurrencePattern != "daily")
+            if (request.RecurrencePattern != "Daily")
             {
                 foreach (var day in request.DaysOfWeek)
                 {
@@ -241,7 +231,7 @@ public class EventActions
             {
                 Pattern = new RecurrencePattern
                 {
-                    Type = recurrencePatterns[request.RecurrencePattern],
+                    Type = (RecurrencePatternType)Enum.Parse(typeof(RecurrencePatternType), request.RecurrencePattern),
                     DaysOfWeek = new List<DayOfWeekObject?>(request.DaysOfWeek.Select(d => daysOfWeek[d] as DayOfWeekObject?)),
                     Interval = request.Interval ?? 1
                 },
@@ -275,29 +265,26 @@ public class EventActions
     }
 
     [Action("Calendar: cancel event", Description = "This action allows the organizer of a meeting to send a cancellation " +
-                                                    "message and cancel the event with specified ID. The organizer can " +
-                                                    "also cancel an occurrence of a recurring meeting by providing the " +
-                                                    "occurrence event ID.")]
+                                                    "message and cancel the event.")]
     public async Task CancelEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        [ActionParameter] [Display("Event")] [DataSource(typeof(EventDataSourceHandler))] string eventId,
         [ActionParameter] CancelEventRequest request)
     {
-        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var requestBody = new Microsoft.Graph.Me.Events.Item.Cancel.CancelPostRequestBody
-        {
-            Comment = request.Comment ?? ""
-        };
-        try
-        {
-            await client.Me.Events[request.EventOrEventOccurrenceId].Cancel.PostAsync(requestBody);
-        }
-        catch (ODataError error)
-        {
-            throw new ArgumentException(error.Error.Message);
-        }
+        await CancelEventOrEventOccurrence(authenticationCredentialsProviders, eventId, request);
     }
     
+    [Action("Calendar: cancel event occurrence", Description = "This action allows the organizer of a meeting to send " +
+                                                               "a cancellation message and cancel an occurrence of a " +
+                                                               "recurring meeting.")]
+    public async Task CancelEventOccurrence(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        [ActionParameter] [Display("Event occurrence")] [DataSource(typeof(EventOccurrenceDataSourceHandler))] string eventOccurrenceId,
+        [ActionParameter] CancelEventRequest request)
+    {
+        await CancelEventOrEventOccurrence(authenticationCredentialsProviders, eventOccurrenceId, request);
+    }
+
     [Action("Calendar: forward event", Description = "This action allows the organizer or attendee of a meeting event " +
-                                                     "with specified ID to forward the meeting request to a new recipient.")]
+                                                     "to forward the meeting request to a new recipient.")]
     public async Task ForwardEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ForwardEventRequest request)
     {
@@ -331,10 +318,64 @@ public class EventActions
     
     #region PATCH
 
-    [Action("Calendar: update event", Description = "Update an existing event or occurrence of a recurring event with " +
-                                                    "specified ID. Specify fields that need to be updated.")]
+    [Action("Calendar: update event", Description = "Update an existing event. Specify fields that need to be updated.")]
     public async Task<EventDto> UpdateEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        [ActionParameter] [Display("Event")] [DataSource(typeof(EventDataSourceHandler))] string eventId,
         [ActionParameter] UpdateEventRequest request)
+    {
+        return await UpdateEventOrEventOccurrence(authenticationCredentialsProviders, eventId, request);
+    }
+    
+    [Action("Calendar: update event occurrence", Description = "Update an existing occurrence of a recurring event. " +
+                                                               "Specify fields that need to be updated.")]
+    public async Task<EventDto> UpdateEventOccurrence(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        [ActionParameter] [Display("Event occurrence")] [DataSource(typeof(EventOccurrenceDataSourceHandler))] string eventOccurrenceId,
+        [ActionParameter] UpdateEventRequest request)
+    {
+        return await UpdateEventOrEventOccurrence(authenticationCredentialsProviders, eventOccurrenceId, request);
+    }
+
+    #endregion
+
+    #region DELETE
+
+    [Action("Calendar: delete event", Description = "Delete an event.")]
+    public async Task DeleteEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        [ActionParameter] DeleteEventRequest request) 
+    {
+        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+        try
+        {
+            await client.Me.Events[request.EventId].DeleteAsync();
+        }
+        catch (ODataError error)
+        {
+            throw new ArgumentException(error.Error.Message);
+        }
+    }
+
+    #endregion
+
+    private async Task CancelEventOrEventOccurrence(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        string eventOrEventOccurrenceId, CancelEventRequest request)
+    {
+        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+        var requestBody = new Microsoft.Graph.Me.Events.Item.Cancel.CancelPostRequestBody
+        {
+            Comment = request.Comment ?? ""
+        };
+        try
+        {
+            await client.Me.Events[eventOrEventOccurrenceId].Cancel.PostAsync(requestBody);
+        }
+        catch (ODataError error)
+        {
+            throw new ArgumentException(error.Error.Message);
+        }
+    }
+    
+    private async Task<EventDto> UpdateEventOrEventOccurrence(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        string eventOrEventOccurrenceId, UpdateEventRequest request)
     {
         string UpdateBodyContentWithOnlineMeetingInformation(string html, string newContent)
         {
@@ -371,7 +412,7 @@ public class EventActions
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         try
         {
-            var eventData = await client.Me.Events[request.EventOrEventOccurrenceId].GetAsync();
+            var eventData = await client.Me.Events[eventOrEventOccurrenceId].GetAsync();
             eventData.Subject = request.Subject ?? eventData.Subject;
             eventData.Body = request.BodyContent != null
                 ? new ItemBody { ContentType = BodyType.Html, Content = RecalculateContent(eventData) }
@@ -394,7 +435,7 @@ public class EventActions
                 }))
                 : eventData.Attendees;
             
-            var updatedEvent = await client.Me.Events[request.EventOrEventOccurrenceId].PatchAsync(eventData);
+            var updatedEvent = await client.Me.Events[eventOrEventOccurrenceId].PatchAsync(eventData);
             var updatedEventDto = new EventDto(updatedEvent);
             return updatedEventDto;
         }
@@ -403,28 +444,7 @@ public class EventActions
             throw new ArgumentException(error.Error.Message);
         }
     }
-
-    #endregion
-
-    #region DELETE
-
-    [Action("Calendar: delete event", Description = "Delete an event with specified ID.")]
-    public async Task DeleteEvent(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] DeleteEventRequest request) 
-    {
-        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        try
-        {
-            await client.Me.Events[request.EventId].DeleteAsync();
-        }
-        catch (ODataError error)
-        {
-            throw new ArgumentException(error.Error.Message);
-        }
-    }
-
-    #endregion
-
+    
     private string WrapEventBodyContent(string? content)
     {
         return $"<div id='{EventBodyContentId}'>{content ?? ""}</div>";

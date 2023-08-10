@@ -25,7 +25,7 @@ public class ContactActions
         };
     }
     
-    [Action("Contact: get contact", Description = "Get contact with specified ID.")]
+    [Action("Contact: get contact", Description = "Get a contact.")]
     public async Task<ContactDto> GetContact(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] GetContactRequest request)
     {
@@ -83,7 +83,7 @@ public class ContactActions
     
     #region PATCH 
     
-    [Action("Contact: update contact", Description = "Update contact with specified ID.")]
+    [Action("Contact: update contact", Description = "Update a contact.")]
     public async Task<ContactDto> UpdateContact(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] UpdateContactRequest request)
     {
@@ -117,7 +117,7 @@ public class ContactActions
         }
     }
     
-    [Action("Contact: add email to contact", Description = "Add email to emails list of a contact with specified ID.")]
+    [Action("Contact: add email to contact", Description = "Add email to emails list of a contact.")]
     public async Task<ContactDto> AddEmail(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] EmailRequest request)
     {
@@ -140,7 +140,7 @@ public class ContactActions
         }
     }
     
-    [Action("Contact: remove email from contact", Description = "Remove email from emails list of a contact with specified ID.")]
+    [Action("Contact: remove email from contact", Description = "Remove email from emails list of a contact.")]
     public async Task<ContactDto> RemoveEmail(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] EmailRequest request)
     {
@@ -167,7 +167,7 @@ public class ContactActions
     }
     
     [Action("Contact: add business phone number", Description = "Add business phone number to business phones list of " +
-                                                                "a contact with specified ID.")]
+                                                                "a contact.")]
     public async Task<ContactDto> AddBusinessPhone(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] BusinessPhoneRequest request)
     {
@@ -191,7 +191,7 @@ public class ContactActions
     }
     
     [Action("Contact: remove business phone number", Description = "Remove business phone number from business phones " +
-                                                                   "list of a contact with specified ID.")]
+                                                                   "list of a contact.")]
     public async Task<ContactDto> RemoveBusinessPhone(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] BusinessPhoneRequest request)
     {
@@ -220,7 +220,7 @@ public class ContactActions
     
     #region DELETE
     
-    [Action("Contact: delete contact", Description = "Delete a contact with specified ID.")]
+    [Action("Contact: delete contact", Description = "Delete a contact.")]
     public async Task DeleteContact(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] DeleteContactRequest request)
     {

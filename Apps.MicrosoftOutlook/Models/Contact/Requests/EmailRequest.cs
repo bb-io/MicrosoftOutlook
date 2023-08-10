@@ -1,10 +1,13 @@
-﻿using Blackbird.Applications.Sdk.Common;
+﻿using Apps.MicrosoftOutlook.DataSourceHandlers;
+using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Dynamic;
 
 namespace Apps.MicrosoftOutlook.Models.Contact.Requests;
 
 public class EmailRequest
 {
-    [Display("Contact ID")]
+    [Display("Contact")]
+    [DataSource(typeof(ContactDataSourceHandler))]
     public string ContactId { get; set; }
     
     public string Email { get; set; }
