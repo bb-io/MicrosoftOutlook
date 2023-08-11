@@ -14,12 +14,13 @@ public class MailFolderDataSourceHandler : BaseInvocable, IAsyncDataSourceHandle
         CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
-        var mailFolders = await client.Me.MailFolders.GetAsync(requestConfiguration => 
-            requestConfiguration.QueryParameters.Select = new[] { "id", "displayName" }, cancellationToken);
+        var mailFolders = await client.Me.MailFolders.GetAsync(requestConfiguration =>
+            {
+                requestConfiguration.QueryParameters.Select = new[] { "id", "displayName" };
+                requestConfiguration.QueryParameters.Filter = $"contains(displayName, '{context.SearchString ?? ""}')";
+            }
+            , cancellationToken);
         
-        return mailFolders.Value
-            .Where(f => context.SearchString == null 
-                             || f.DisplayName.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
-            .ToDictionary(f => f.Id, f => f.DisplayName);
+        return mailFolders.Value.ToDictionary(f => f.Id, f => f.DisplayName);
     }
 }

@@ -19,6 +19,10 @@ public class NonDefaultCalendarDataSourceHandler : BaseInvocable, IAsyncDataSour
             requestConfiguration.QueryParameters.Select = new[] { "id", "name" };
             requestConfiguration.QueryParameters.Filter = "isDefaultCalendar eq false";
         }, cancellationToken);
-        return calendars.Value.ToDictionary(c => c.Id, c => c.Name);
+        
+        return calendars.Value
+            .Where(c => context.SearchString == null 
+                        || c.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(c => c.Id, c => c.Name);
     }
 }

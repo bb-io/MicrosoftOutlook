@@ -14,8 +14,12 @@ public class ContactDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
         CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
-        var contacts = await client.Me.Contacts.GetAsync(requestConfiguration => 
-            requestConfiguration.QueryParameters.Select = new[] { "id", "displayName" }, cancellationToken);
+        var contacts = await client.Me.Contacts.GetAsync(requestConfiguration =>
+        {
+            requestConfiguration.QueryParameters.Select = new[] { "id", "displayName" };
+            requestConfiguration.QueryParameters.Search = context.SearchString ?? " ";
+            requestConfiguration.QueryParameters.Top = 20;
+        }, cancellationToken);
         return contacts.Value.ToDictionary(c => c.Id, c => c.DisplayName);
     }
 }

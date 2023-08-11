@@ -18,7 +18,7 @@ public class EventDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
         if (string.IsNullOrEmpty(context.SearchString))
             events = await GetEventsFromMainCalendar(cancellationToken);
         else
-            events = await GetAllEvents(context.SearchString, cancellationToken);
+            events = await GetEventsFromAllCalendars(context.SearchString, cancellationToken);
         
         return events.ToDictionary(e => e.Id, e => e.Subject);
     }
@@ -26,12 +26,15 @@ public class EventDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
     private async Task<IEnumerable<Event>> GetEventsFromMainCalendar(CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
-        var events = await client.Me.Calendar.Events.GetAsync(requestConfiguration => 
-            requestConfiguration.QueryParameters.Select = new[] { "id", "subject" }, cancellationToken);
+        var events = await client.Me.Calendar.Events.GetAsync(requestConfiguration =>
+        {
+            requestConfiguration.QueryParameters.Top = 20;
+            requestConfiguration.QueryParameters.Select = new[] { "id", "subject" };
+        }, cancellationToken);
         return events.Value;
     }
     
-    private async Task<IEnumerable<Event>> GetAllEvents(string searchString, CancellationToken cancellationToken)
+    private async Task<IEnumerable<Event>> GetEventsFromAllCalendars(string searchString, CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
         var calendars = await client.Me.Calendars.GetAsync(requestConfiguration => 
@@ -40,12 +43,13 @@ public class EventDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
 
         foreach (var calendar in calendars.Value)
         {
-            var calendarEvents = await client.Me.Calendars[calendar.Id].Events.GetAsync(requestConfiguration => 
-                requestConfiguration.QueryParameters.Select = new[] { "id", "subject", "body" }, cancellationToken);
-            var filteredEvents = calendarEvents.Value
-                .Where(e => e.Subject.Contains(searchString, StringComparison.OrdinalIgnoreCase)
-                            || e.Body.Content.Contains(searchString, StringComparison.OrdinalIgnoreCase));
-            events.AddRange(filteredEvents);
+            var calendarEvents = await client.Me.Calendars[calendar.Id].Events.GetAsync(requestConfiguration =>
+            {
+                requestConfiguration.QueryParameters.Top = 20;
+                requestConfiguration.QueryParameters.Filter = $"contains(subject, '{searchString}')";
+                requestConfiguration.QueryParameters.Select = new[] { "id", "subject" };
+            }, cancellationToken);
+            events.AddRange(calendarEvents.Value);
         }
 
         return events;

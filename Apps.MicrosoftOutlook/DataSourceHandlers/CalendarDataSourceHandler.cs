@@ -14,8 +14,12 @@ public class CalendarDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
         CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
-        var calendars = await client.Me.Calendars.GetAsync(requestConfiguration => 
+        var calendars = await client.Me.Calendars.GetAsync(requestConfiguration =>
             requestConfiguration.QueryParameters.Select = new[] { "id", "name" }, cancellationToken);
-        return calendars.Value.ToDictionary(c => c.Id, c => c.Name);
+        
+        return calendars.Value
+            .Where(c => context.SearchString == null 
+                        || c.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(c => c.Id, c => c.Name);
     }
 }
