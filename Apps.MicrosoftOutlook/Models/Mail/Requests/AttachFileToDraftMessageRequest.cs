@@ -1,6 +1,7 @@
 ﻿using Apps.MicrosoftOutlook.DataSourceHandlers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
+using File = Blackbird.Applications.Sdk.Common.Files.File;
 
 namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
 
@@ -10,7 +11,5 @@ public class AttachFileToDraftMessageRequest
     [DataSource(typeof(DraftMessageDataSourceHandler))]
     public string MessageId { get; set; }
     
-    public string Filename { get; set; }
-
-    public byte[] File { get; set; }
+    public File File { get; set; }
 }

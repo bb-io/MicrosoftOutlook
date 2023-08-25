@@ -231,18 +231,17 @@ public class MailActions
         [ActionParameter] AttachFileToDraftMessageRequest request)
     {
         const int threeMegabytesInBytes = 3145728;
-        if (request.File.Length > threeMegabytesInBytes)
+        if (request.File.Bytes.LongLength > threeMegabytesInBytes)
             throw new ArgumentException("Size of the file must be under 3 MB.");
         
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        if (!MimeTypes.TryGetMimeType(request.Filename, out var mimeType))
-            mimeType = "application/octet-stream";
         var requestBody = new FileAttachment
         {
-            Name = request.Filename,
-            ContentBytes = request.File,
-            ContentType = mimeType
+            Name = request.File.Name,
+            ContentBytes = request.File.Bytes,
+            ContentType = request.File.ContentType
         };
+        
         try
         {
             var attachment = await client.Me.Messages[request.MessageId].Attachments.PostAsync(requestBody);
