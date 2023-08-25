@@ -4,6 +4,7 @@ using Apps.MicrosoftOutlook.Models.Mail.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 
@@ -224,33 +225,65 @@ public class MailActions
         }
     }
 
-    [Action("Mail: attach file to draft message", Description = "Attach file to draft message with specified ID. Size " +
-                                                                "of the file must be under 3 MB. Filename should be " +
-                                                                "specified with file extension.")]
+    [Action("Mail: attach file to draft message", Description = "Attach file to a draft message.")]
     public async Task<FileAttachmentDto> AttachFileToDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] AttachFileToDraftMessageRequest request)
     {
         const int threeMegabytesInBytes = 3145728;
-        if (request.File.Bytes.LongLength > threeMegabytesInBytes)
-            throw new ArgumentException("Size of the file must be under 3 MB.");
-        
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var requestBody = new FileAttachment
+        var attachment = new FileAttachment();
+
+        if (request.File.Bytes.LongLength < threeMegabytesInBytes)
         {
-            Name = request.File.Name,
-            ContentBytes = request.File.Bytes,
-            ContentType = request.File.ContentType
-        };
+            var requestBody = new FileAttachment
+            {
+                Name = request.File.Name,
+                ContentBytes = request.File.Bytes,
+                ContentType = request.File.ContentType
+            };
         
-        try
-        {
-            var attachment = await client.Me.Messages[request.MessageId].Attachments.PostAsync(requestBody);
-            return new FileAttachmentDto((FileAttachment)attachment);
+            try
+            {
+                attachment = (FileAttachment)await client.Me.Messages[request.MessageId].Attachments.PostAsync(requestBody);
+            }
+            catch (ODataError error)
+            {
+                throw new ArgumentException(error.Error.Message);
+            }
         }
-        catch (ODataError error)
+        else
         {
-            throw new ArgumentException(error.Error.Message);
+            const int chunkSize = 2949120;
+            
+            var requestBody = new Microsoft.Graph.Me.Messages.Item.Attachments.CreateUploadSession.CreateUploadSessionPostRequestBody
+            {
+                AttachmentItem = new AttachmentItem
+                {
+                    AttachmentType = AttachmentType.File,
+                    Name = request.File.Name,
+                    Size = request.File.Bytes.LongLength
+                }
+            };
+            
+            var uploadSession = await client.Me.Messages[request.MessageId].Attachments.CreateUploadSession
+                .PostAsync(requestBody);
+
+            using var memoryStream = new MemoryStream(request.File.Bytes);
+            var fileUploadTask = new LargeFileUploadTask<FileAttachment>(uploadSession, memoryStream, chunkSize);
+            
+            try
+            {
+                var uploadResult = await fileUploadTask.UploadAsync();
+                var attachmentId = uploadResult.Location.Segments[^1].Split("'")[^2];
+                attachment = (FileAttachment)await client.Me.Messages[request.MessageId].Attachments[attachmentId].GetAsync();
+            }
+            catch (ODataError error)
+            {
+                throw new ArgumentException(error.Error.Message);
+            }
         }
+        
+        return new FileAttachmentDto(attachment);
     }
 
     #endregion
