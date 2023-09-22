@@ -18,11 +18,6 @@ public class EventWebhooks : BaseInvocable
         Description = "This webhook is triggered when a new event is created.")]
     public async Task<WebhookResponse<EventDto>> OnMessageCreated(WebhookRequest request)
     {
-        return await HandleWebhookRequest(request);
-    }
-    
-    private async Task<WebhookResponse<EventDto>> HandleWebhookRequest(WebhookRequest request)
-    {
         if (request.QueryParameters.TryGetValue("validationToken", out var validationToken))
         {
             return new WebhookResponse<EventDto>
