@@ -1,16 +1,13 @@
-﻿using System.Net;
-using Apps.MicrosoftOutlook.Dtos;
+﻿using Apps.MicrosoftOutlook.Dtos;
 using Apps.MicrosoftOutlook.Webhooks.Handlers.Events;
 using Apps.MicrosoftOutlook.Webhooks.Payload;
-using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
-using Newtonsoft.Json;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 
 [WebhookList]
-public class EventWebhooks : BaseInvocable
+public class EventWebhooks : BaseWebhookList
 {
     public EventWebhooks(InvocationContext invocationContext) : base(invocationContext) { }
 
@@ -18,35 +15,13 @@ public class EventWebhooks : BaseInvocable
         Description = "This webhook is triggered when a new event is created.")]
     public async Task<WebhookResponse<EventDto>> OnMessageCreated(WebhookRequest request)
     {
-        if (request.QueryParameters.TryGetValue("validationToken", out var validationToken))
-        {
-            return new WebhookResponse<EventDto>
-            {
-                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(validationToken)
-                },
-                ReceivedWebhookRequestType = WebhookRequestType.Preflight
-            };
-        }
-        
-        var eventPayload = JsonConvert.DeserializeObject<EventPayloadWrapper>(request.Body.ToString(), 
-            new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Ignore }).Value.First();
+        return await HandleWebhookRequest(request, GetEvent);
+    }
 
-        if (eventPayload.ClientState != ApplicationConstants.ClientState)
-            return new WebhookResponse<EventDto>
-            {
-                HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
-                ReceivedWebhookRequestType = WebhookRequestType.Preflight
-            };
-
+    private async Task<EventDto?> GetEvent(EventPayload eventPayload)
+    {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
         var calendarEvent = await client.Me.Events[eventPayload.ResourceData.Id].GetAsync();
-        
-        return new WebhookResponse<EventDto>
-        {
-            HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK),
-            Result = new EventDto(calendarEvent)
-        };
-    }
+        return new EventDto(calendarEvent);
+    } 
 }
