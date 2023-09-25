@@ -1,6 +1,6 @@
 ﻿using Apps.MicrosoftOutlook.Dtos;
 using Apps.MicrosoftOutlook.Webhooks.Handlers.Events;
-using Apps.MicrosoftOutlook.Webhooks.Payload;
+using Apps.MicrosoftOutlook.Webhooks.Lists.ItemGetters;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 
@@ -15,13 +15,6 @@ public class EventWebhooks : BaseWebhookList
         Description = "This webhook is triggered when a new event is created.")]
     public async Task<WebhookResponse<EventDto>> OnMessageCreated(WebhookRequest request)
     {
-        return await HandleWebhookRequest(request, GetEvent);
+        return await HandleWebhookRequest(request, new EventGetter(AuthenticationCredentialsProviders));
     }
-
-    private async Task<EventDto?> GetEvent(EventPayload eventPayload)
-    {
-        var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
-        var calendarEvent = await client.Me.Events[eventPayload.ResourceData.Id].GetAsync();
-        return new EventDto(calendarEvent);
-    } 
 }

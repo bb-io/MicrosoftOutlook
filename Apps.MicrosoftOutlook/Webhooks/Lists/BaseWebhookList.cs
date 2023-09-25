@@ -1,6 +1,8 @@
 ﻿using System.Net;
+using Apps.MicrosoftOutlook.Webhooks.Lists.ItemGetters;
 using Apps.MicrosoftOutlook.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Newtonsoft.Json;
@@ -10,10 +12,15 @@ namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 [WebhookList]
 public abstract class BaseWebhookList : BaseInvocable
 {
-    protected BaseWebhookList(InvocationContext invocationContext) : base(invocationContext) { }
+    protected readonly IEnumerable<AuthenticationCredentialsProvider> AuthenticationCredentialsProviders;
+
+    protected BaseWebhookList(InvocationContext invocationContext) : base(invocationContext)
+    {
+        AuthenticationCredentialsProviders = invocationContext.AuthenticationCredentialsProviders;
+    }
 
     protected async Task<WebhookResponse<T>> HandleWebhookRequest<T>(WebhookRequest request,
-        Func<EventPayload, Task<T?>> getItem) where T: class
+        ItemGetter<T> itemGetter) where T: class
     {
         if (request.QueryParameters.TryGetValue("validationToken", out var validationToken))
         {
@@ -37,7 +44,7 @@ public abstract class BaseWebhookList : BaseInvocable
                 ReceivedWebhookRequestType = WebhookRequestType.Preflight
             };
 
-        var item = await getItem(eventPayload);
+        var item = await itemGetter.GetItem(eventPayload);
         
         if (item is null)
             return new WebhookResponse<T>

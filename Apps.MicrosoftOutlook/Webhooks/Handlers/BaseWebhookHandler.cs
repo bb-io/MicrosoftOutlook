@@ -7,26 +7,31 @@ namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
 public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, IAsyncRenewableWebhookEventHandler
 {
-    private readonly string _subscriptionEvent; 
-    private readonly string _resource;
-    protected readonly IWebhookInput webhookInput;
+    private readonly string _subscriptionEvent;
+    protected readonly IWebhookInput? WebhookInput;
 
-    protected BaseWebhookHandler([WebhookParameter(true)] IWebhookInput input, string subscriptionEvent)
+    protected BaseWebhookHandler(string subscriptionEvent)
     {
         _subscriptionEvent = subscriptionEvent;
-        webhookInput = input;
-        _resource = GetResource();
+    }
+    
+    protected BaseWebhookHandler([WebhookParameter(true)] IWebhookInput input, string subscriptionEvent) 
+        : this(subscriptionEvent)
+    {
+        WebhookInput = input;
     }
 
     public async Task SubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+        var resource = GetResource();
+        
         var subscription = new Subscription
         {
             ChangeType = _subscriptionEvent,
             NotificationUrl = values["payloadUrl"],
-            Resource = _resource,
+            Resource = resource,
             ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
             ClientState = ApplicationConstants.ClientState
         };
