@@ -290,7 +290,7 @@ public class MailActions
     
     #region PATCH 
     
-    [Action("Mail: update draft message subject", Description = "Update the subject of a draft message with specified ID.")]
+    [Action("Mail: update draft message subject", Description = "Update the subject of a draft message.")]
     public async Task<MessageDto> UpdateDraftMessageSubject(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] UpdateMessageSubjectRequest request)
     {
@@ -311,8 +311,8 @@ public class MailActions
         }
     }
     
-    [Action("Mail: update draft message body", Description = "Update the body of a draft message with specified ID. " +
-                                                             "The body can be in html format or a plain string.")]
+    [Action("Mail: update draft message body", Description = "Update the body of a draft message. The body can be in " +
+                                                             "html format or a plain string.")]
     public async Task<MessageDto> UpdateDraftMessageBody(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] UpdateMessageBodyRequest request)
     {
@@ -334,7 +334,7 @@ public class MailActions
     }
     
     [Action("Mail: add recipients to draft message", Description = "Add one or more email recipients to an existing " +
-                                                                   "recipients list of a draft message with specified ID.")]
+                                                                   "recipients list of a draft message.")]
     public async Task<MessageDto> AddRecipientsToDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] RecipientEmailsRequest request)
     {
@@ -360,8 +360,7 @@ public class MailActions
     } 
     
     [Action("Mail: remove recipients from draft message", Description = "Remove one or more email recipients from an " +
-                                                                        "existing recipients list of a draft message " +
-                                                                        "with specified ID.")]
+                                                                        "existing recipients list of a draft message.")]
     public async Task<MessageDto> RemoveEmailRecipients(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] RecipientEmailsRequest request)
     {
@@ -397,7 +396,7 @@ public class MailActions
     
     #region DELETE
     
-    [Action("Mail: delete message", Description = "Delete message with specified ID. The message can be either sent or a draft.")]
+    [Action("Mail: delete message", Description = "Delete a message. The message can be either sent or a draft.")]
     public async Task DeleteMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] DeleteMessageRequest request)
     {
