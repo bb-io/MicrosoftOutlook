@@ -1,13 +1,17 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+		<Product>Microsoft Outlook</Product>
+		<Version>1.0.0</Version>
+		<Description>Email, calendar and contacts management</Description>
+		<AssemblyName>Apps.MicrosoftOutlook</AssemblyName>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.2.0-alpha3" />
+      <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.2.0-alpha4" />
       <PackageReference Include="HtmlAgilityPack" Version="1.11.49" />
       <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
       <PackageReference Include="Microsoft.Graph" Version="5.17.0" />
@@ -18,5 +22,7 @@
       <Folder Include="Auth" />
       <Folder Include="Models\Event" />
     </ItemGroup>
-
+	<ItemGroup>
+		<EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png"></EmbeddedResource>
+	</ItemGroup>
 </Project>

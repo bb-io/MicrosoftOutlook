@@ -1,18 +1,19 @@
 ﻿using Apps.MicrosoftOutlook.Auth.OAuth2;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.MicrosoftOutlook;
 
-public class MicrosoftOutlookApplication : IApplication
+public class MicrosoftOutlookApplication : BaseInvocable, IApplication
 {
     private readonly Dictionary<Type, object> _typesInstances;
-    
-    public MicrosoftOutlookApplication()
+
+    public MicrosoftOutlookApplication(InvocationContext invocationContext) : base(invocationContext)
     {
         _typesInstances = CreateTypesInstances();
     }
-    
+
     public string Name
     {
         get => "Microsoft Outlook";
@@ -32,8 +33,8 @@ public class MicrosoftOutlookApplication : IApplication
     {
         return new Dictionary<Type, object>
         {
-            { typeof(IOAuth2AuthorizeService), new OAuth2AuthorizeService() },
-            { typeof(IOAuth2TokenService), new OAuth2TokenService() }
+            { typeof(IOAuth2AuthorizeService), new OAuth2AuthorizeService(InvocationContext) },
+            { typeof(IOAuth2TokenService), new OAuth2TokenService(InvocationContext) }
         };
     }
 }
