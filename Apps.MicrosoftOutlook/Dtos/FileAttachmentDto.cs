@@ -1,23 +1,21 @@
 ﻿using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Files;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Microsoft.Graph.Models;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
 
 namespace Apps.MicrosoftOutlook.Dtos;
 
 public class FileAttachmentDto
 {
-    public FileAttachmentDto(FileAttachment attachment)
+    public FileAttachmentDto(FileAttachment attachment, IFileManagementClient fileManagementClient)
     {
+        using var stream = new MemoryStream(attachment.ContentBytes);
         AttachmentId = attachment.Id;
-        File = new File(attachment.ContentBytes)
-        {
-            Name = attachment.Name, 
-            ContentType = attachment.ContentType
-        };
+        File = fileManagementClient.UploadAsync(stream, attachment.ContentType, attachment.Name).Result;
     }
     
     [Display("Attachment ID")]
     public string AttachmentId { get; set; }
     
-    public File File { get; set; }
+    public FileReference File { get; set; }
 }
