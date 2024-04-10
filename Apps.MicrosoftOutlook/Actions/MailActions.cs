@@ -4,6 +4,8 @@ using Apps.MicrosoftOutlook.Models.Mail.Responses;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
@@ -13,6 +15,13 @@ namespace Apps.MicrosoftOutlook.Actions;
 [ActionList]
 public class MailActions
 {
+    private readonly IFileManagementClient _fileManagementClient;
+
+    public MailActions(IFileManagementClient fileManagementClient)
+    {
+        _fileManagementClient = fileManagementClient;
+    }
+    
     #region GET
 
     [Action("Mail: list most recent messages", Description = "List messages received during past hours. If number of " +
@@ -85,7 +94,8 @@ public class MailActions
         {
             var attachments = await client.Me.Messages[request.MessageId].Attachments.GetAsync();
             var fileAttachments = attachments.Value.Where(a => a is FileAttachment);
-            var fileAttachmentsDto = fileAttachments.Select(a => new FileAttachmentDto((FileAttachment)a));
+            var fileAttachmentsDto =
+                fileAttachments.Select(a => new FileAttachmentDto((FileAttachment)a, _fileManagementClient));
             return new ListAttachmentsResponse
             {
                 Attachments = fileAttachmentsDto
@@ -232,13 +242,15 @@ public class MailActions
         const int threeMegabytesInBytes = 3145728;
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         var attachment = new FileAttachment();
-
-        if (request.File.Bytes.LongLength < threeMegabytesInBytes)
+        var file = await _fileManagementClient.DownloadAsync(request.File);
+        var fileBytes = await file.GetByteData();
+        
+        if (fileBytes.LongLength < threeMegabytesInBytes)
         {
             var requestBody = new FileAttachment
             {
                 Name = request.File.Name,
-                ContentBytes = request.File.Bytes,
+                ContentBytes = fileBytes,
                 ContentType = request.File.ContentType
             };
         
@@ -261,14 +273,14 @@ public class MailActions
                 {
                     AttachmentType = AttachmentType.File,
                     Name = request.File.Name,
-                    Size = request.File.Bytes.LongLength
+                    Size = fileBytes.LongLength
                 }
             };
             
             var uploadSession = await client.Me.Messages[request.MessageId].Attachments.CreateUploadSession
                 .PostAsync(requestBody);
 
-            using var memoryStream = new MemoryStream(request.File.Bytes);
+            using var memoryStream = new MemoryStream(fileBytes);
             var fileUploadTask = new LargeFileUploadTask<FileAttachment>(uploadSession, memoryStream, chunkSize);
             
             try
@@ -283,7 +295,7 @@ public class MailActions
             }
         }
         
-        return new FileAttachmentDto(attachment);
+        return new FileAttachmentDto(attachment, _fileManagementClient);
     }
 
     #endregion
