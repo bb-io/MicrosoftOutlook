@@ -2,13 +2,20 @@
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.Sdk.Common.Metadata;
 
 namespace Apps.MicrosoftOutlook;
 
-public class MicrosoftOutlookApplication : BaseInvocable, IApplication
+public class MicrosoftOutlookApplication : BaseInvocable, IApplication, ICategoryProvider
 {
     private readonly Dictionary<Type, object> _typesInstances;
 
+    public IEnumerable<ApplicationCategory> Categories
+    {
+        get => [ApplicationCategory.Communication, ApplicationCategory.Microsoft365Apps];
+        set { }
+    }
+    
     public MicrosoftOutlookApplication(InvocationContext invocationContext) : base(invocationContext)
     {
         _typesInstances = CreateTypesInstances();
