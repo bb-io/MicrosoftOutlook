@@ -70,7 +70,8 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
                         //msg2 = ex.InnerException.Message,
                         //msg3 = ex.Source,
                         msg4 = JsonConvert.SerializeObject(ex.Data),
-                        msg6 = ex.Data.Count
+                        msg6 = ex.Data.Count,
+                        payload = values["payloadUrl"]
                     });
                     await client2.ExecuteAsync(request2);
                 }
