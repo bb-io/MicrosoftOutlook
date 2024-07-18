@@ -43,7 +43,7 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
         {
             foreach (var sharedContact in WebhookInput.SharedEmails)
             {
-                string subscriptionForSharedContact = resource.Replace("/me", $"users/{sharedContact}");
+                string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
                 var subscriptionShared = new Subscription
                 {
                     ChangeType = _subscriptionEvent,
@@ -69,7 +69,8 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
                         msg = ex.Message,
                         //msg2 = ex.InnerException.Message,
                         //msg3 = ex.Source,
-                        msg4 = JsonConvert.SerializeObject(ex.Data)
+                        msg4 = JsonConvert.SerializeObject(ex.Data),
+                        msg6 = ex.Data.Count
                     });
                     await client2.ExecuteAsync(request2);
                 }
