@@ -36,14 +36,31 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
             ClientState = ApplicationConstants.ClientState
         };
         await client.Subscriptions.PostAsync(subscription);
+
+        foreach(var sharedContact in WebhookInput.Contacts)
+        {
+            string subscriptionForSharedContact = resource.Replace("/me", $"users/{sharedContact}");
+            var subscriptionShared = new Subscription
+            {
+                ChangeType = _subscriptionEvent,
+                NotificationUrl = values["payloadUrl"],
+                Resource = subscriptionForSharedContact,
+                ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+                ClientState = ApplicationConstants.ClientState
+            };
+            await client.Subscriptions.PostAsync(subscriptionShared);
+        }
     }
 
     public async Task UnsubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var subscription = (await client.Subscriptions.GetAsync()).Value.First(s => s.NotificationUrl == values["payloadUrl"]);
-        await client.Subscriptions[subscription.Id].DeleteAsync();
+        var subscriptions = (await client.Subscriptions.GetAsync()).Value.Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
+        foreach(var subscription in subscriptions)
+        {
+            await client.Subscriptions[subscription.Id].DeleteAsync();
+        } 
     }
     
     [Period(4200)]
