@@ -2,6 +2,7 @@
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
+using RestSharp;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
@@ -33,7 +34,7 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
             NotificationUrl = values["payloadUrl"],
             Resource = resource,
             ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
-            ClientState = ApplicationConstants.ClientState
+            ClientState = "1"//ApplicationConstants.ClientState
         };
         await client.Subscriptions.PostAsync(subscription);
 
@@ -50,7 +51,25 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
                     ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
                     ClientState = ApplicationConstants.ClientState
                 };
-                await client.Subscriptions.PostAsync(subscriptionShared);
+                try
+                {
+                    await client.Subscriptions.PostAsync(subscriptionShared);
+                }
+                catch(Exception ex)
+                {
+                    var options = new RestClientOptions("https://webhook.site")
+                    {
+                        MaxTimeout = -1,
+                    };
+                    var client2 = new RestClient(options);
+                    var request2 = new RestRequest("/34c42d20-8e52-4bf3-b5cf-ec3167c12074", Method.Post);
+                    request2.AddJsonBody(new
+                    {
+                        msg = ex.Message,
+                    });
+                    await client2.ExecuteAsync(request2);
+                }
+                
             }
         }
     }

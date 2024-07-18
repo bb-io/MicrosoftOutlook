@@ -46,6 +46,7 @@ public class ContactActions
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         try
         {
+            var users = await client.Users.GetAsync();
             var contact = await client.Me.Contacts[request.ContactId].GetAsync();
             return new ContactDto(contact);
         }
