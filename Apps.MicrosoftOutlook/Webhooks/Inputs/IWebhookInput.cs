@@ -6,7 +6,6 @@ namespace Apps.MicrosoftOutlook.Webhooks.Inputs;
 
 public class IWebhookInput
 {
-    [Display("Contacts")]
-    [DataSource(typeof(ContactDataSourceHandler))]
-    public List<string> Contacts { get; set; }
+    [Display("Shared emails")]
+    public List<string>? SharedEmails { get; set; }
 }

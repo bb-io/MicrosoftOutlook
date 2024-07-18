@@ -37,18 +37,21 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
         };
         await client.Subscriptions.PostAsync(subscription);
 
-        foreach(var sharedContact in WebhookInput.Contacts)
+        if(WebhookInput.SharedEmails != null)
         {
-            string subscriptionForSharedContact = resource.Replace("/me", $"users/{sharedContact}");
-            var subscriptionShared = new Subscription
+            foreach (var sharedContact in WebhookInput.SharedEmails)
             {
-                ChangeType = _subscriptionEvent,
-                NotificationUrl = values["payloadUrl"],
-                Resource = subscriptionForSharedContact,
-                ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
-                ClientState = ApplicationConstants.ClientState
-            };
-            await client.Subscriptions.PostAsync(subscriptionShared);
+                string subscriptionForSharedContact = resource.Replace("/me", $"users/{sharedContact}");
+                var subscriptionShared = new Subscription
+                {
+                    ChangeType = _subscriptionEvent,
+                    NotificationUrl = values["payloadUrl"],
+                    Resource = subscriptionForSharedContact,
+                    ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+                    ClientState = ApplicationConstants.ClientState
+                };
+                await client.Subscriptions.PostAsync(subscriptionShared);
+            }
         }
     }
 
