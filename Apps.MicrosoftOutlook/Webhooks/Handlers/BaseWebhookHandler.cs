@@ -67,8 +67,8 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
                     request2.AddJsonBody(new
                     {
                         msg = ex.Message,
-                        msg2 = ex.InnerException.Message,
-                        msg3 = ex.Source,
+                        //msg2 = ex.InnerException.Message,
+                        //msg3 = ex.Source,
                         msg4 = JsonConvert.SerializeObject(ex.Data)
                     });
                     await client2.ExecuteAsync(request2);
