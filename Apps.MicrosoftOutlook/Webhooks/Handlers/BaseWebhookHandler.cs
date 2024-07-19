@@ -52,30 +52,7 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
                     ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
                     ClientState = ApplicationConstants.ClientState
                 };
-                try
-                {
-                    await client.Subscriptions.PostAsync(subscriptionShared);
-                }
-                catch(Exception ex)
-                {
-                    var options = new RestClientOptions("https://webhook.site")
-                    {
-                        MaxTimeout = -1,
-                    };
-                    var client2 = new RestClient(options);
-                    var request2 = new RestRequest("/34c42d20-8e52-4bf3-b5cf-ec3167c12074", Method.Post);
-                    request2.AddJsonBody(new
-                    {
-                        msg = ex.Message,
-                        //msg2 = ex.InnerException.Message,
-                        //msg3 = ex.Source,
-                        msg4 = JsonConvert.SerializeObject(ex.Data),
-                        msg6 = ex.Data.Count,
-                        payload = values["payloadUrl"]
-                    });
-                    await client2.ExecuteAsync(request2);
-                }
-                
+                await client.Subscriptions.PostAsync(subscriptionShared); 
             }
         }
     }
