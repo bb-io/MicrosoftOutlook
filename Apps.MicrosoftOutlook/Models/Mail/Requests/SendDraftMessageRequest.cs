@@ -6,7 +6,7 @@ namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
 
 public class SendDraftMessageRequest
 {
-    [Display("Draft message")]
+    [Display("Draft message ID")]
     [DataSource(typeof(DraftMessageDataSourceHandler))]
     public string MessageId { get; set; }
 }

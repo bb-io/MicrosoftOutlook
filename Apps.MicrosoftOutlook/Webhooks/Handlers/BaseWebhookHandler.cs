@@ -2,6 +2,8 @@
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
+using Newtonsoft.Json;
+using RestSharp;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
@@ -36,14 +38,34 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
             ClientState = ApplicationConstants.ClientState
         };
         await client.Subscriptions.PostAsync(subscription);
+
+        if(WebhookInput.SharedEmails != null)
+        {
+            foreach (var sharedContact in WebhookInput.SharedEmails)
+            {
+                string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
+                var subscriptionShared = new Subscription
+                {
+                    ChangeType = _subscriptionEvent,
+                    NotificationUrl = values["payloadUrl"],
+                    Resource = subscriptionForSharedContact,
+                    ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+                    ClientState = ApplicationConstants.ClientState
+                };
+                await client.Subscriptions.PostAsync(subscriptionShared); 
+            }
+        }
     }
 
     public async Task UnsubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var subscription = (await client.Subscriptions.GetAsync()).Value.First(s => s.NotificationUrl == values["payloadUrl"]);
-        await client.Subscriptions[subscription.Id].DeleteAsync();
+        var subscriptions = (await client.Subscriptions.GetAsync()).Value.Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
+        foreach(var subscription in subscriptions)
+        {
+            await client.Subscriptions[subscription.Id].DeleteAsync();
+        } 
     }
     
     [Period(4200)]
