@@ -7,7 +7,7 @@ namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
 
 public class AttachFileToDraftMessageRequest
 {
-    [Display("Message")]
+    [Display("Message ID")]
     [DataSource(typeof(DraftMessageDataSourceHandler))]
     public string MessageId { get; set; }
     

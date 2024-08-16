@@ -6,7 +6,7 @@ namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
 
 public class RecipientEmailsRequest
 {
-    [Display("Message")]
+    [Display("Message ID")]
     [DataSource(typeof(DraftMessageDataSourceHandler))]
     public string MessageId { get; set; }
     

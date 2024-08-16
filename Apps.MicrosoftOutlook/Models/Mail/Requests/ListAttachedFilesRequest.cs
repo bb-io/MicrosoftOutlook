@@ -6,7 +6,7 @@ namespace Apps.MicrosoftOutlook.Models.Mail.Requests;
 
 public class ListAttachedFilesRequest
 {
-    [Display("Message")]
+    [Display("Message ID")]
     [DataSource(typeof(MessageDataSourceHandler))]
     public string MessageId { get; set; }
 }

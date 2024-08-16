@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Product>Microsoft Outlook</Product>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Description>Email, calendar and contacts management</Description>
     <AssemblyName>Apps.MicrosoftOutlook</AssemblyName>
   </PropertyGroup>
