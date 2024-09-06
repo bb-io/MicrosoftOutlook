@@ -6,7 +6,7 @@ Blackbird is the new automation backbone for the language technology industry. B
 
 <!-- begin docs -->
 
-Microsoft 365 Email is a personal information manager software system that allows users to manage their emails, calendars, and contacts in one integrated platform.
+Microsoft 365 Email is a personal information manager software system that allows users to manage their emails.
 
 ## Before setting up
 
