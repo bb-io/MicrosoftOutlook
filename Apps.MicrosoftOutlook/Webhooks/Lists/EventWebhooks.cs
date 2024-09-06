@@ -6,7 +6,6 @@ using Blackbird.Applications.Sdk.Common.Webhooks;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 
-[WebhookList]
 public class EventWebhooks : BaseWebhookList
 {
     public EventWebhooks(InvocationContext invocationContext) : base(invocationContext) { }

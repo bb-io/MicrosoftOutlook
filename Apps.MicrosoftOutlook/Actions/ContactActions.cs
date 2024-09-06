@@ -10,7 +10,6 @@ using RestSharp;
 
 namespace Apps.MicrosoftOutlook.Actions;
 
-[ActionList]
 public class ContactActions
 {
     #region GET

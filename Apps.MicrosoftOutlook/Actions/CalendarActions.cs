@@ -9,7 +9,6 @@ using Microsoft.Graph.Models.ODataErrors;
 
 namespace Apps.MicrosoftOutlook.Actions;
 
-[ActionList]
 public class CalendarActions
 {
     #region GET

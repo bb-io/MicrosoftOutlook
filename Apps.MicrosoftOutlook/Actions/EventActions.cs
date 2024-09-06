@@ -13,7 +13,6 @@ using Microsoft.Kiota.Abstractions;
 
 namespace Apps.MicrosoftOutlook.Actions;
 
-[ActionList]
 public class EventActions
 {
     private const string EventBodyContentId = "EventBodyContentId";
