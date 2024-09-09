@@ -3,9 +3,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <Product>Microsoft Outlook</Product>
-    <Version>1.0.5</Version>
-    <Description>Email, calendar and contacts management</Description>
+    <Product>Microsoft 365 Email</Product>
+    <Version>1.0.7</Version>
+    <Description>Microsoft 365 Email app that allows you to access your emails</Description>
     <AssemblyName>Apps.MicrosoftOutlook</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
@@ -23,5 +23,10 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png"></EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\README.md">
+      <Link>README.md</Link>
+    </Content>
   </ItemGroup>
 </Project>

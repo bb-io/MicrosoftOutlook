@@ -13,18 +13,11 @@ using Microsoft.Graph.Models.ODataErrors;
 namespace Apps.MicrosoftOutlook.Actions;
 
 [ActionList]
-public class MailActions
+public class MailActions(IFileManagementClient fileManagementClient)
 {
-    private readonly IFileManagementClient _fileManagementClient;
-
-    public MailActions(IFileManagementClient fileManagementClient)
-    {
-        _fileManagementClient = fileManagementClient;
-    }
-    
     #region GET
 
-    [Action("Mail: list most recent messages", Description = "List messages received during past hours. If number of " +
+    [Action("List most recent messages", Description = "List messages received during past hours. If number of " +
                                                              "hours is not specified, messages received during past 24 " +
                                                              "hours are listed. To retrieve messages from specific mail " +
                                                              "folder, specify mail folder.")]
@@ -68,7 +61,7 @@ public class MailActions
         };
     }
 
-    [Action("Mail: get message", Description = "Retrieve a message from your mailbox.")]
+    [Action("Get message", Description = "Retrieve a message from your mailbox.")]
     public async Task<MessageDto> GetMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] GetMessageRequest request)
     {
@@ -85,7 +78,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: list attached files", Description = "Retrieve a list of files attached to a message.")]
+    [Action("List attached files", Description = "Retrieve a list of files attached to a message.")]
     public async Task<ListAttachmentsResponse> ListAttachedFiles(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListAttachedFilesRequest request)
     {
@@ -95,7 +88,7 @@ public class MailActions
             var attachments = await client.Me.Messages[request.MessageId].Attachments.GetAsync();
             var fileAttachments = attachments.Value.Where(a => a is FileAttachment);
             var fileAttachmentsDto =
-                fileAttachments.Select(a => new FileAttachmentDto((FileAttachment)a, _fileManagementClient));
+                fileAttachments.Select(a => new FileAttachmentDto((FileAttachment)a, fileManagementClient));
             return new ListAttachmentsResponse
             {
                 Attachments = fileAttachmentsDto
@@ -107,7 +100,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: list mail folders", Description = "Retrieve a list of mail folders.")]
+    [Action("List mail folders", Description = "Retrieve a list of mail folders.")]
     public async Task<ListMailFoldersResponse> ListMailFolders(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders)
     {
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
@@ -130,7 +123,7 @@ public class MailActions
     
     #region POST
     
-    [Action("Mail: create draft message", Description = "Create a draft of a new message. The body of the message can " +
+    [Action("Create draft message", Description = "Create a draft of a new message. The body of the message can " +
                                                         "be in html format or a plain string.")]
     public async Task<MessageDto> CreateDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] CreateMessageRequest request)
@@ -155,7 +148,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: forward message", Description = "Forward a message.")]
+    [Action("Forward message", Description = "Forward a message.")]
     public async Task ForwardMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ForwardMessageRequest request)
     {
@@ -176,7 +169,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: reply to a message", Description = "Reply to the sender of a message.")]
+    [Action("Reply to a message", Description = "Reply to the sender of a message.")]
     public async Task ReplyToMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ReplyToMessageRequest request)
     {
@@ -195,7 +188,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: send draft message", Description = "Send an existing draft message.")]
+    [Action("Send draft message", Description = "Send an existing draft message.")]
     public async Task SendDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] SendDraftMessageRequest request)
     {
@@ -210,7 +203,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: send new message", Description = "Send newly created message.")]
+    [Action("Send new message", Description = "Send newly created message.")]
     public async Task SendNewMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] SendNewMessageRequest request)
     {
@@ -235,14 +228,14 @@ public class MailActions
         }
     }
 
-    [Action("Mail: attach file to draft message", Description = "Attach file to a draft message.")]
+    [Action("Attach file to draft message", Description = "Attach file to a draft message.")]
     public async Task<FileAttachmentDto> AttachFileToDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] AttachFileToDraftMessageRequest request)
     {
         const int threeMegabytesInBytes = 3145728;
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         var attachment = new FileAttachment();
-        var file = await _fileManagementClient.DownloadAsync(request.File);
+        var file = await fileManagementClient.DownloadAsync(request.File);
         var fileBytes = await file.GetByteData();
         
         if (fileBytes.LongLength < threeMegabytesInBytes)
@@ -295,14 +288,14 @@ public class MailActions
             }
         }
         
-        return new FileAttachmentDto(attachment, _fileManagementClient);
+        return new FileAttachmentDto(attachment, fileManagementClient);
     }
 
     #endregion
     
     #region PATCH 
     
-    [Action("Mail: update draft message subject", Description = "Update the subject of a draft message.")]
+    [Action("Update draft message subject", Description = "Update the subject of a draft message.")]
     public async Task<MessageDto> UpdateDraftMessageSubject(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] UpdateMessageSubjectRequest request)
     {
@@ -323,7 +316,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: update draft message body", Description = "Update the body of a draft message. The body can be in " +
+    [Action("Update draft message body", Description = "Update the body of a draft message. The body can be in " +
                                                              "html format or a plain string.")]
     public async Task<MessageDto> UpdateDraftMessageBody(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] UpdateMessageBodyRequest request)
@@ -345,7 +338,7 @@ public class MailActions
         }
     }
     
-    [Action("Mail: add recipients to draft message", Description = "Add one or more email recipients to an existing " +
+    [Action("Add recipients to draft message", Description = "Add one or more email recipients to an existing " +
                                                                    "recipients list of a draft message.")]
     public async Task<MessageDto> AddRecipientsToDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] RecipientEmailsRequest request)
@@ -371,7 +364,7 @@ public class MailActions
         }
     } 
     
-    [Action("Mail: remove recipients from draft message", Description = "Remove one or more email recipients from an " +
+    [Action("Remove recipients from draft message", Description = "Remove one or more email recipients from an " +
                                                                         "existing recipients list of a draft message.")]
     public async Task<MessageDto> RemoveEmailRecipients(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] RecipientEmailsRequest request)
@@ -408,7 +401,7 @@ public class MailActions
     
     #region DELETE
     
-    [Action("Mail: delete message", Description = "Delete a message. The message can be either sent or a draft.")]
+    [Action("Delete message", Description = "Delete a message. The message can be either sent or a draft.")]
     public async Task DeleteMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] DeleteMessageRequest request)
     {

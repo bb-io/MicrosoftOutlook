@@ -8,10 +8,8 @@ using Blackbird.Applications.Sdk.Common.Webhooks;
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 
 [WebhookList]
-public class MailWebhooks : BaseWebhookList
+public class MailWebhooks(InvocationContext invocationContext) : BaseWebhookList(invocationContext)
 {
-    public MailWebhooks(InvocationContext invocationContext) : base(invocationContext) { }
-
     [Webhook("On email created", typeof(MessageCreatedWebhookHandler), 
         Description = "This webhook is triggered when a new email is created.")]
     public async Task<WebhookResponse<MessageDto>> OnEmailCreated(WebhookRequest request)
