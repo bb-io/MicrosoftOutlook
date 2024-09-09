@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Product>Microsoft 365 Email</Product>
-    <Version>1.0.8</Version>
+    <Version>1.0.9</Version>
     <Description>Microsoft 365 Email app that allows you to access your emails</Description>
     <AssemblyName>Apps.MicrosoftOutlook</AssemblyName>
   </PropertyGroup>
