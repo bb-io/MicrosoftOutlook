@@ -7,14 +7,12 @@ namespace Apps.MicrosoftOutlook.Webhooks.Lists.ItemGetters;
 
 public class MessageWithSenderGetter : ItemGetter<MessageDto>
 {
-    private readonly SenderInput _sender;
-    private readonly ReceiverInput _receiver;
+    private readonly SenderAndReceiverInput _sender;
 
     public MessageWithSenderGetter(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        SenderInput sender, ReceiverInput receiver) : base(authenticationCredentialsProviders)
+        SenderAndReceiverInput sender) : base(authenticationCredentialsProviders)
     {
         _sender = sender;
-        _receiver = receiver;
     }
 
     public override async Task<MessageDto?> GetItem(EventPayload eventPayload)
@@ -28,9 +26,9 @@ public class MessageWithSenderGetter : ItemGetter<MessageDto>
             return null;
 
         var receiverEmails = message?.ToRecipients?.Select(r => r.EmailAddress?.Address);
-        if (_receiver.Email is not null && receiverEmails is not null && receiverEmails.All(x => x != _receiver.Email))
+        if (_sender.ReceiverEmail is not null && receiverEmails is not null && receiverEmails.All(x => x != _sender.ReceiverEmail))
             return null;
-        
+
         return new MessageDto(message);
     }
 }
