@@ -27,10 +27,10 @@ public class MailWebhooks(InvocationContext invocationContext) : BaseWebhookList
     [Webhook("On email received", typeof(MessageReceivedWebhookHandler), 
         Description = "This webhook is triggered when a new email is received.")]
     public async Task<WebhookResponse<MessageDto>> OnEmailReceived(WebhookRequest request, 
-        [WebhookParameter] SenderInput sender)
+        [WebhookParameter] SenderInput sender, [WebhookParameter] ReceiverInput receiver)
     {
         return await HandleWebhookRequest(request, 
-            new MessageWithSenderGetter(AuthenticationCredentialsProviders, sender));
+            new MessageWithSenderGetter(AuthenticationCredentialsProviders, sender, receiver));
     }
     
     [Webhook("On email with files attached received", typeof(MessageReceivedWebhookHandler), 
