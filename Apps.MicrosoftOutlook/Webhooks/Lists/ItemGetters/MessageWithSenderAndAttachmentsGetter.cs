@@ -3,15 +3,16 @@ using Apps.MicrosoftOutlook.Webhooks.Inputs;
 using Apps.MicrosoftOutlook.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Microsoft.Graph.Models;
+using System.Reflection;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Lists.ItemGetters;
 
 public class MessageWithSenderAndAttachmentsGetter: ItemGetter<MessageDto>
 {
-    private readonly SenderInput _sender;
+    private readonly SenderAndReceiverInput _sender;
 
     public MessageWithSenderAndAttachmentsGetter(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        SenderInput sender) : base(authenticationCredentialsProviders)
+        SenderAndReceiverInput sender) : base(authenticationCredentialsProviders)
     {
         _sender = sender;
     }
@@ -29,7 +30,11 @@ public class MessageWithSenderAndAttachmentsGetter: ItemGetter<MessageDto>
 
         if (_sender.Email is not null && message.Sender.EmailAddress.Address != _sender.Email)
             return null;
-        
+
+        var receiverEmails = message?.ToRecipients?.Select(r => r.EmailAddress?.Address);
+        if (_sender.ReceiverEmail is not null && receiverEmails is not null && receiverEmails.All(x => x != _sender.ReceiverEmail))
+            return null;
+
         return new MessageDto(message);
     }
 }
