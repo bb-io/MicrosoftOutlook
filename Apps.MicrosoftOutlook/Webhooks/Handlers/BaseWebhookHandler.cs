@@ -21,72 +21,49 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
     public async Task SubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
-        try
+        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+        var resource = GetResource();
+
+        var subscription = new Subscription
         {
-            await WebhookLogger.LogAsync(new { status = "subscribing", values });
+            ChangeType = subscriptionEvent,
+            NotificationUrl = values["payloadUrl"],
+            Resource = resource,
+            ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+            ClientState = ApplicationConstants.ClientState
+        };
+            
+        await client.Subscriptions.PostAsync(subscription);
 
-            var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-            var resource = GetResource();
-
-            var subscription = new Subscription
+        if (WebhookInput.SharedEmails != null)
+        {
+            foreach (var sharedContact in WebhookInput.SharedEmails)
             {
-                ChangeType = subscriptionEvent,
-                NotificationUrl = values["payloadUrl"],
-                Resource = resource,
-                ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
-                ClientState = ApplicationConstants.ClientState
-            };
-            await client.Subscriptions.PostAsync(subscription);
-
-            if (WebhookInput.SharedEmails != null)
-            {
-                foreach (var sharedContact in WebhookInput.SharedEmails)
+                string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
+                var subscriptionShared = new Subscription
                 {
-                    string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
-                    var subscriptionShared = new Subscription
-                    {
-                        ChangeType = subscriptionEvent,
-                        NotificationUrl = values["payloadUrl"],
-                        Resource = subscriptionForSharedContact,
-                        ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
-                        ClientState = ApplicationConstants.ClientState
-                    };
+                    ChangeType = subscriptionEvent,
+                    NotificationUrl = values["payloadUrl"],
+                    Resource = subscriptionForSharedContact,
+                    ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+                    ClientState = ApplicationConstants.ClientState
+                };
 
-                    await client.Subscriptions.PostAsync(subscriptionShared);
-                }
+                await client.Subscriptions.PostAsync(subscriptionShared);
             }
-
-            await WebhookLogger.LogAsync(new { status = "subscribed", values });
-        }
-        catch (Exception e)
-        {
-            await WebhookLogger.LogAsync(new { status = "error", values, error = e.Message, error_type = e.GetType().ToString(), stack_trace = e.StackTrace });
-            throw;
         }
     }
 
     public async Task UnsubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
-        try
+        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+        var allSubscriptions = (await client.Subscriptions.GetAsync())!;
+        var subscriptions = allSubscriptions.Value!
+            .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
+        foreach (var subscription in subscriptions)
         {
-            await WebhookLogger.LogAsync(new { status = "unsubscribing", values });
-            
-            var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-            var allSubscriptions = (await client.Subscriptions.GetAsync())!;
-            var subscriptions = allSubscriptions.Value!
-                .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
-            foreach (var subscription in subscriptions)
-            {
-                await client.Subscriptions[subscription.Id].DeleteAsync();
-            }
-            
-            await WebhookLogger.LogAsync(new { status = "unsubscribed", values });
-        }
-        catch (Exception e)
-        {            
-            await WebhookLogger.LogAsync(new { status = "error", values, error = e.Message, error_type = e.GetType().ToString(), stack_trace = e.StackTrace });
-            throw;
+            await client.Subscriptions[subscription.Id].DeleteAsync();
         }
     }
     

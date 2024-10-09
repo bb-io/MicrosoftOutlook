@@ -17,12 +17,8 @@ public abstract class BaseWebhookList(InvocationContext invocationContext) : Bas
     protected async Task<WebhookResponse<T>> HandleWebhookRequest<T>(WebhookRequest request,
         ItemGetter<T> itemGetter) where T: class
     {
-        await WebhookLogger.LogAsync(new { status = "handling request", query_parameters = request.QueryParameters });
-        
         if (request.QueryParameters.TryGetValue("validationToken", out var validationToken))
         {
-            await WebhookLogger.LogAsync(new { status = "validation passed, returning preflight", validationToken });
-            
             return new WebhookResponse<T>
             {
                 HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
