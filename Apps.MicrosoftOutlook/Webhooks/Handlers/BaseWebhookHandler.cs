@@ -7,16 +7,11 @@ using RestSharp;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
-public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, IAsyncRenewableWebhookEventHandler
+public abstract class BaseWebhookHandler(string subscriptionEvent)
+    : IWebhookEventHandler<IWebhookInput>, IAsyncRenewableWebhookEventHandler
 {
-    private readonly string _subscriptionEvent;
     protected readonly IWebhookInput? WebhookInput;
 
-    protected BaseWebhookHandler(string subscriptionEvent)
-    {
-        _subscriptionEvent = subscriptionEvent;
-    }
-    
     protected BaseWebhookHandler([WebhookParameter(true)] IWebhookInput input, string subscriptionEvent) 
         : this(subscriptionEvent)
     {
@@ -26,46 +21,72 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
     public async Task SubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
-        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var resource = GetResource();
-        
-        var subscription = new Subscription
+        try
         {
-            ChangeType = _subscriptionEvent,
-            NotificationUrl = values["payloadUrl"],
-            Resource = resource,
-            ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
-            ClientState = ApplicationConstants.ClientState
-        };
-        await client.Subscriptions.PostAsync(subscription);
+            await WebhookLogger.LogAsync(new { status = "subscribing", values });
 
-        if(WebhookInput.SharedEmails != null)
-        {
-            foreach (var sharedContact in WebhookInput.SharedEmails)
+            var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+            var resource = GetResource();
+
+            var subscription = new Subscription
             {
-                string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
-                var subscriptionShared = new Subscription
+                ChangeType = subscriptionEvent,
+                NotificationUrl = values["payloadUrl"],
+                Resource = resource,
+                ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+                ClientState = ApplicationConstants.ClientState
+            };
+            await client.Subscriptions.PostAsync(subscription);
+
+            if (WebhookInput.SharedEmails != null)
+            {
+                foreach (var sharedContact in WebhookInput.SharedEmails)
                 {
-                    ChangeType = _subscriptionEvent,
-                    NotificationUrl = values["payloadUrl"],
-                    Resource = subscriptionForSharedContact,
-                    ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
-                    ClientState = ApplicationConstants.ClientState
-                };
-                await client.Subscriptions.PostAsync(subscriptionShared); 
+                    string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
+                    var subscriptionShared = new Subscription
+                    {
+                        ChangeType = subscriptionEvent,
+                        NotificationUrl = values["payloadUrl"],
+                        Resource = subscriptionForSharedContact,
+                        ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
+                        ClientState = ApplicationConstants.ClientState
+                    };
+                    await client.Subscriptions.PostAsync(subscriptionShared);
+                }
             }
+
+            await WebhookLogger.LogAsync(new { status = "subscribed", values });
+        }
+        catch (Exception e)
+        {
+            await WebhookLogger.LogAsync(new { status = "error", values, error = e.Message, error_type = e.GetType().ToString(), stack_trace = e.StackTrace });
+            throw;
         }
     }
 
     public async Task UnsubscribeAsync(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         Dictionary<string, string> values)
     {
-        var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var subscriptions = (await client.Subscriptions.GetAsync()).Value.Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
-        foreach(var subscription in subscriptions)
+        try
         {
-            await client.Subscriptions[subscription.Id].DeleteAsync();
-        } 
+            await WebhookLogger.LogAsync(new { status = "unsubscribing", values });
+            
+            var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
+            var allSubscriptions = (await client.Subscriptions.GetAsync())!;
+            var subscriptions = allSubscriptions.Value!
+                .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
+            foreach (var subscription in subscriptions)
+            {
+                await client.Subscriptions[subscription.Id].DeleteAsync();
+            }
+            
+            await WebhookLogger.LogAsync(new { status = "unsubscribed", values });
+        }
+        catch (Exception e)
+        {            
+            await WebhookLogger.LogAsync(new { status = "error", values, error = e.Message, error_type = e.GetType().ToString(), stack_trace = e.StackTrace });
+            throw;
+        }
     }
     
     [Period(4200)]
