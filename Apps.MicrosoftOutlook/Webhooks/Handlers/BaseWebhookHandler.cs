@@ -51,6 +51,9 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
                         ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
                         ClientState = ApplicationConstants.ClientState
                     };
+
+                    await Task.Delay(4000);
+                    
                     await client.Subscriptions.PostAsync(subscriptionShared);
                 }
             }
