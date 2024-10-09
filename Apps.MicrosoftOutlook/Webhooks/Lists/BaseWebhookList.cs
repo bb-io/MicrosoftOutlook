@@ -10,20 +10,19 @@ using Newtonsoft.Json;
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 
 [WebhookList]
-public abstract class BaseWebhookList : BaseInvocable
+public abstract class BaseWebhookList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
-    protected readonly IEnumerable<AuthenticationCredentialsProvider> AuthenticationCredentialsProviders;
-
-    protected BaseWebhookList(InvocationContext invocationContext) : base(invocationContext)
-    {
-        AuthenticationCredentialsProviders = invocationContext.AuthenticationCredentialsProviders;
-    }
+    protected readonly IEnumerable<AuthenticationCredentialsProvider> AuthenticationCredentialsProviders = invocationContext.AuthenticationCredentialsProviders;
 
     protected async Task<WebhookResponse<T>> HandleWebhookRequest<T>(WebhookRequest request,
         ItemGetter<T> itemGetter) where T: class
     {
+        await WebhookLogger.LogAsync(new { status = "handling request", query_parameters = request.QueryParameters });
+        
         if (request.QueryParameters.TryGetValue("validationToken", out var validationToken))
         {
+            await WebhookLogger.LogAsync(new { status = "validation passed, returning preflight", validationToken });
+            
             return new WebhookResponse<T>
             {
                 HttpResponseMessage = new HttpResponseMessage(HttpStatusCode.OK)
