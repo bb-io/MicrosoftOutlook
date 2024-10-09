@@ -52,8 +52,6 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
                         ClientState = ApplicationConstants.ClientState
                     };
 
-                    await Task.Delay(4000);
-                    
                     await client.Subscriptions.PostAsync(subscriptionShared);
                 }
             }
