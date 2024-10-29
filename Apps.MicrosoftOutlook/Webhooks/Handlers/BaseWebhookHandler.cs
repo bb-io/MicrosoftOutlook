@@ -52,7 +52,7 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
 
                 Task.Run(async () =>
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(1500);
                     await client.Subscriptions.PostAsync(subscriptionShared);
                 });
                 
@@ -71,7 +71,7 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         {  
             Task.Run(async () =>
             {
-                await Task.Delay(1000);
+                await Task.Delay(1500);
                 await client.Subscriptions[subscription.Id].DeleteAsync();
             });
         }
