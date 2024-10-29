@@ -17,45 +17,16 @@ public class OAuth2TokenService(InvocationContext invocationContext)
     public async Task<Dictionary<string, string>> RefreshToken(Dictionary<string, string> values, 
         CancellationToken cancellationToken) 
     { 
-        try
+        const string grantType = "refresh_token";
+        var bodyParameters = new Dictionary<string, string>
         {
-            const string grantType = "refresh_token";
-            var bodyParameters = new Dictionary<string, string>
-            {
-                { "grant_type", grantType },
-                { "refresh_token", values["refresh_token"] },
-                { "client_id", ApplicationConstants.ClientId },
-                { "client_secret", ApplicationConstants.ClientSecret }
-            };
+            { "grant_type", grantType },
+            { "refresh_token", values["refresh_token"] },
+            { "client_id", ApplicationConstants.ClientId },
+            { "client_secret", ApplicationConstants.ClientSecret }
+        };
 
-            await WebhookLogger.LogAsync(new
-            {
-                message = "Refreshing",
-                values = bodyParameters
-            });
-
-            var result = await RequestToken(bodyParameters, cancellationToken);
-
-            await WebhookLogger.LogAsync(new
-            {
-                message = "Refreshed",
-                values = result
-            });
-
-            return result;
-        }
-        catch (Exception e)
-        {
-            await WebhookLogger.LogAsync(new
-            {
-                message = "Error",
-                exceptionMessage = e.Message,
-                exceptionStackTrace = e.StackTrace,
-                exceptionType = e.GetType().Name
-            });
-            
-            throw;
-        }
+        return await RequestToken(bodyParameters, cancellationToken);
     }
     
     public async Task<Dictionary<string, string?>> RequestToken(string state, string code, 
