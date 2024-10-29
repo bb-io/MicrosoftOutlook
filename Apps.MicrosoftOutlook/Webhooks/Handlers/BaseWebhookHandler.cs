@@ -1,4 +1,5 @@
 ﻿using Apps.MicrosoftOutlook.Webhooks.Inputs;
+using Azure.Core;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
@@ -49,7 +50,12 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
                     ClientState = ApplicationConstants.ClientState
                 };
 
-                await client.Subscriptions.PostAsync(subscriptionShared);
+                Task.Run(async () =>
+                {
+                    await Task.Delay(1000);
+                    await client.Subscriptions.PostAsync(subscriptionShared);
+                });
+                
             }
         }
     }
@@ -62,8 +68,12 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         var subscriptions = allSubscriptions.Value!
             .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
         foreach (var subscription in subscriptions)
-        {
-            await client.Subscriptions[subscription.Id].DeleteAsync();
+        {  
+            Task.Run(async () =>
+            {
+                await Task.Delay(1000);
+                await client.Subscriptions[subscription.Id].DeleteAsync();
+            });
         }
     }
     
