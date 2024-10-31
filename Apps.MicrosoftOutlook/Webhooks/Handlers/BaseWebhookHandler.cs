@@ -35,7 +35,7 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         };
         Task.Run(async () =>
         {
-            await Task.Delay(1500);
+            await Task.Delay(500);
             await client.Subscriptions.PostAsync(subscription);
         });
 
