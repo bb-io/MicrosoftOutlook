@@ -28,13 +28,16 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         var subscription = new Subscription
         {
             ChangeType = subscriptionEvent,
-            NotificationUrl = values["payloadUrl"],
+            NotificationUrl = values["payloadUrl"], //.Replace("https://localhost:44390", "https://cb6f-176-36-119-50.ngrok-free.app"),
             Resource = resource,
             ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
             ClientState = ApplicationConstants.ClientState
         };
-            
-        await client.Subscriptions.PostAsync(subscription);
+        Task.Run(async () =>
+        {
+            await Task.Delay(1500);
+            await client.Subscriptions.PostAsync(subscription);
+        });
 
         if (WebhookInput.SharedEmails != null)
         {
@@ -44,7 +47,7 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
                 var subscriptionShared = new Subscription
                 {
                     ChangeType = subscriptionEvent,
-                    NotificationUrl = values["payloadUrl"],
+                    NotificationUrl = values["payloadUrl"], //.Replace("https://localhost:44390", "https://cb6f-176-36-119-50.ngrok-free.app"),
                     Resource = subscriptionForSharedContact,
                     ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
                     ClientState = ApplicationConstants.ClientState
@@ -66,14 +69,10 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         var allSubscriptions = (await client.Subscriptions.GetAsync())!;
         var subscriptions = allSubscriptions.Value!
-            .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
+            .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList(); //.Replace("https://localhost:44390", "https://cb6f-176-36-119-50.ngrok-free.app")
         foreach (var subscription in subscriptions)
-        {  
-            Task.Run(async () =>
-            {
-                await Task.Delay(1500);
-                await client.Subscriptions[subscription.Id].DeleteAsync();
-            });
+        {
+            await client.Subscriptions[subscription.Id].DeleteAsync();
         }
     }
     
