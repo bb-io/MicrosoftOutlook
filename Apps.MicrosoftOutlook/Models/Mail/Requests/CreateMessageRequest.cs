@@ -10,5 +10,8 @@ public class CreateMessageRequest
 
     [Display("Recipient emails")]
     public IEnumerable<string> RecipientEmails { get; set; }
+
+    [Display("Sender email", Description = "Use this property to send message from shared email")]
+    public string? SenderEmail { get; set; }
 }
 
