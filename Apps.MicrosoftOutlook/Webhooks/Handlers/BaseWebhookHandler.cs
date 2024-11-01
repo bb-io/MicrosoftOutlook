@@ -1,11 +1,8 @@
 ﻿using Apps.MicrosoftOutlook.Webhooks.Inputs;
-using Azure.Core;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
-using Newtonsoft.Json;
 using RestSharp;
-using Tavis.UriTemplates;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
