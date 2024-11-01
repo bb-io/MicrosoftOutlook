@@ -5,6 +5,7 @@ using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
 using Newtonsoft.Json;
 using RestSharp;
+using Tavis.UriTemplates;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
@@ -35,8 +36,52 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         };
         Task.Run(async () =>
         {
+            if (WebhookInput.UrlToSendSubscription != null)
+            {
+                var clientRest = new RestClient();
+                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
+                request.AddHeader("Content-Type", "application/json");
+                request.AddJsonBody(new
+                {
+                    beforeDelay = true
+                });
+                await clientRest.ExecuteAsync(request);
+            }
+
             await Task.Delay(500);
-            var result = await client.Subscriptions.PostAsync(subscription);
+
+            if (WebhookInput.UrlToSendSubscription != null)
+            {
+                var clientRest = new RestClient();
+                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
+                request.AddHeader("Content-Type", "application/json");
+                request.AddJsonBody(new
+                {
+                    beforeExecute = true
+                });
+                await clientRest.ExecuteAsync(request);
+            }
+
+            Subscription result = null;
+            try
+            {
+                result = await client.Subscriptions.PostAsync(subscription);
+            }
+            catch (Exception ex)
+            {
+                if (WebhookInput.UrlToSendSubscription != null)
+                {
+                    var clientRest = new RestClient();
+                    var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
+                    request.AddHeader("Content-Type", "application/json");
+                    request.AddJsonBody(new
+                    {
+                        ex.Message,
+                        after = true
+                    });
+                    await clientRest.ExecuteAsync(request);
+                }
+            }
             
             if(WebhookInput.UrlToSendSubscription != null)
             {
@@ -45,7 +90,8 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
                 request.AddHeader("Content-Type", "application/json");
                 request.AddJsonBody(new
                 {
-                    result
+                    result,
+                    after = true
                 });
                 await clientRest.ExecuteAsync(request);
             }
