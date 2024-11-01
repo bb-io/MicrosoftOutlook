@@ -36,7 +36,20 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         Task.Run(async () =>
         {
             await Task.Delay(500);
-            await client.Subscriptions.PostAsync(subscription);
+            var result = await client.Subscriptions.PostAsync(subscription);
+            
+            if(WebhookInput.UrlToSendSubscription != null)
+            {
+                var clientRest = new RestClient();
+                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
+                request.AddHeader("Content-Type", "application/json");
+                request.AddJsonBody(new
+                {
+                    result
+                });
+                await clientRest.ExecuteAsync(request);
+            }
+            
         });
 
         if (WebhookInput.SharedEmails != null)
