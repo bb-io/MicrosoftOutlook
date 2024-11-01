@@ -15,6 +15,7 @@
     <PackageReference Include="HtmlAgilityPack" Version="1.11.49" />
     <PackageReference Include="Microsoft.Graph" Version="5.32.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Std.UriTemplate" Version="1.0.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
   </ItemGroup>
   <ItemGroup>
