@@ -32,98 +32,19 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
             ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
             ClientState = ApplicationConstants.ClientState
         };
-        var reqInfo = client.Subscriptions.ToPostRequestInformation(subscription);
-        var uri = reqInfo.URI;
-        TextReader tr = new StreamReader(reqInfo.Content);
-        var contentAsText = tr.ReadToEnd();
+        var requestInfo = client.Subscriptions.ToPostRequestInformation(subscription);
+        var requestUriAsString = requestInfo.URI.ToString();
+        var contentAsString = new StreamReader(requestInfo.Content).ReadToEnd();
 
         Task.Run(async () =>
         {
-            if (WebhookInput.UrlToSendSubscription != null)
-            {
-                var clientRest = new RestClient();
-                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
-                request.AddHeader("Content-Type", "application/json");
-                request.AddJsonBody(new
-                {
-                    beforeDelay = true
-                });
-                await clientRest.ExecuteAsync(request);
-            }
-
             await Task.Delay(1500);
 
-            if (WebhookInput.UrlToSendSubscription != null)
-            {
-                var clientRest = new RestClient();
-                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
-                request.AddHeader("Content-Type", "application/json");
-                request.AddJsonBody(new
-                {
-                    beforeExecute = true
-                });
-                await clientRest.ExecuteAsync(request);
-            }
-
-            Subscription result = null;
-            try
-            {
-                var req = client.Subscriptions.ToPostRequestInformation(subscription);
-
-                var clientRest = new RestClient();
-                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
-                request.AddHeader("Content-Type", "application/json");
-                request.AddJsonBody(new
-                {
-                    uri = uri.ToString(),
-                    content = contentAsText,
-                    auth = authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value
-                });
-                await clientRest.ExecuteAsync(request);
-
-
-                var request2 = new RestRequest(uri.ToString(), Method.Post);
-                request2.AddHeader("Authorization", "Bearer " + authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
-                request2.AddStringBody(contentAsText, DataFormat.Json);
-                var res2 = await clientRest.ExecuteAsync(request2);
-
-                var request3 = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
-                request3.AddJsonBody(new
-                {
-                    content = res2.Content,
-                });
-                await clientRest.ExecuteAsync(request3);
-                //result = await client.Subscriptions.PostAsync(subscription);
-            }
-            catch (Exception ex)
-            {
-                if (WebhookInput.UrlToSendSubscription != null)
-                {
-                    var clientRest = new RestClient();
-                    var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
-                    request.AddHeader("Content-Type", "application/json");
-                    request.AddJsonBody(new
-                    {
-                        ex.Message,
-                        after = true
-                    });
-                    await clientRest.ExecuteAsync(request);
-                }
-            }
-            
-            if(WebhookInput.UrlToSendSubscription != null)
-            {
-                var clientRest = new RestClient();
-                var request = new RestRequest(WebhookInput.UrlToSendSubscription, Method.Post);
-                request.AddHeader("Content-Type", "application/json");
-                request.AddJsonBody(new
-                {
-                    result,
-                    after = true
-                });
-                await clientRest.ExecuteAsync(request);
-            }
-            
+            var client = new RestClient();
+            var request = new RestRequest(requestUriAsString, Method.Post);
+            request.AddHeader("Authorization", "Bearer " + authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+            request.AddStringBody(contentAsString, DataFormat.Json);
+            await client.ExecuteAsync(request); 
         });
 
         if (WebhookInput.SharedEmails != null)
@@ -134,16 +55,25 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
                 var subscriptionShared = new Subscription
                 {
                     ChangeType = subscriptionEvent,
-                    NotificationUrl = values["payloadUrl"].Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app"),
+                    NotificationUrl = values["payloadUrl"], //.Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app"),
                     Resource = subscriptionForSharedContact,
                     ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
                     ClientState = ApplicationConstants.ClientState
                 };
 
+                var requestSharedInfo = client.Subscriptions.ToPostRequestInformation(subscriptionShared);
+                var requestSharedUriAsString = requestInfo.URI.ToString();
+                var contentSharedAsString = new StreamReader(requestInfo.Content).ReadToEnd();
+
                 Task.Run(async () =>
                 {
                     await Task.Delay(1500);
-                    await client.Subscriptions.PostAsync(subscriptionShared);
+
+                    var client = new RestClient();
+                    var request = new RestRequest(requestSharedUriAsString, Method.Post);
+                    request.AddHeader("Authorization", "Bearer " + authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+                    request.AddStringBody(contentSharedAsString, DataFormat.Json);
+                    await client.ExecuteAsync(request);
                 });
                 
             }
@@ -156,7 +86,7 @@ public abstract class BaseWebhookHandler(string subscriptionEvent)
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         var allSubscriptions = (await client.Subscriptions.GetAsync())!;
         var subscriptions = allSubscriptions.Value!
-            .Where(s => s.NotificationUrl == values["payloadUrl"].Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app")).ToList(); //.Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app")
+            .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList(); //.Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app")
         foreach (var subscription in subscriptions)
         {
             await client.Subscriptions[subscription.Id].DeleteAsync();
