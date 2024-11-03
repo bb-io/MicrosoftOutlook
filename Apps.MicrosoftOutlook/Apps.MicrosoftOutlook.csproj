@@ -9,14 +9,11 @@
     <AssemblyName>Apps.MicrosoftOutlook</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.6.0" />
+    <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.11.0" />
     <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.0.1" />
     <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.16" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.49" />
-    <PackageReference Include="Microsoft.Graph" Version="5.48.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Std.UriTemplate" Version="0.0.55" />
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Graph" Version="5.60.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Auth" />
