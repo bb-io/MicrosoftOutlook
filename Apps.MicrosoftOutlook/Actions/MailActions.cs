@@ -131,6 +131,7 @@ public class MailActions(IFileManagementClient fileManagementClient)
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         var requestBody = new Message
         {
+            From = string.IsNullOrEmpty(request.SenderEmail) ? null : new Recipient() { EmailAddress = new EmailAddress() { Address = request.SenderEmail } },
             Subject = request.Subject,
             Body = new ItemBody { ContentType = BodyType.Html, Content = request.Content },
             ToRecipients = new List<Recipient>(request.RecipientEmails
@@ -212,6 +213,7 @@ public class MailActions(IFileManagementClient fileManagementClient)
         {
             Message = new Message
             {
+                From = string.IsNullOrEmpty(request.SenderEmail) ? null : new Recipient() { EmailAddress = new EmailAddress() {Address = request.SenderEmail } },
                 Subject = request.Subject,
                 Body = new ItemBody { ContentType = BodyType.Html, Content = request.Content },
                 ToRecipients = new List<Recipient>(request.RecipientEmails

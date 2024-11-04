@@ -6,5 +6,4 @@ public class ApplicationConstants
     public const string ClientSecret = "#{MSOUTLOOK_SECRET}#";
     public const string Scope = "#{MSOUTLOOK_SCOPE}#";
     public const string ClientState = "#{MSOUTLOOK_CLIENT_STATE}#";
-
 }

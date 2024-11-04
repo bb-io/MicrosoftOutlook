@@ -10,14 +10,9 @@ using Newtonsoft.Json;
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 
 [WebhookList]
-public abstract class BaseWebhookList : BaseInvocable
+public abstract class BaseWebhookList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
-    protected readonly IEnumerable<AuthenticationCredentialsProvider> AuthenticationCredentialsProviders;
-
-    protected BaseWebhookList(InvocationContext invocationContext) : base(invocationContext)
-    {
-        AuthenticationCredentialsProviders = invocationContext.AuthenticationCredentialsProviders;
-    }
+    protected readonly IEnumerable<AuthenticationCredentialsProvider> AuthenticationCredentialsProviders = invocationContext.AuthenticationCredentialsProviders;
 
     protected async Task<WebhookResponse<T>> HandleWebhookRequest<T>(WebhookRequest request,
         ItemGetter<T> itemGetter) where T: class

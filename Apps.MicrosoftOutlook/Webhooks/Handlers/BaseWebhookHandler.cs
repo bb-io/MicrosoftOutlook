@@ -2,21 +2,16 @@
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
-using Newtonsoft.Json;
 using RestSharp;
+using System.IO;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 
-public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, IAsyncRenewableWebhookEventHandler
+public abstract class BaseWebhookHandler(string subscriptionEvent)
+    : IWebhookEventHandler<IWebhookInput>, IAsyncRenewableWebhookEventHandler
 {
-    private readonly string _subscriptionEvent;
     protected readonly IWebhookInput? WebhookInput;
 
-    protected BaseWebhookHandler(string subscriptionEvent)
-    {
-        _subscriptionEvent = subscriptionEvent;
-    }
-    
     protected BaseWebhookHandler([WebhookParameter(true)] IWebhookInput input, string subscriptionEvent) 
         : this(subscriptionEvent)
     {
@@ -28,31 +23,59 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
     {
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
         var resource = GetResource();
-        
+
         var subscription = new Subscription
         {
-            ChangeType = _subscriptionEvent,
-            NotificationUrl = values["payloadUrl"],
+            ChangeType = subscriptionEvent,
+            NotificationUrl = values["payloadUrl"], //.Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app"),
             Resource = resource,
             ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
             ClientState = ApplicationConstants.ClientState
         };
-        await client.Subscriptions.PostAsync(subscription);
+        var requestInfo = client.Subscriptions.ToPostRequestInformation(subscription);
+        var requestUriAsString = requestInfo.URI.ToString();
+        var contentAsString = new StreamReader(requestInfo.Content).ReadToEnd();
 
-        if(WebhookInput.SharedEmails != null)
+        Task.Run(async () =>
+        {
+            await Task.Delay(1500);
+
+            var client = new RestClient();
+            var request = new RestRequest(requestUriAsString, Method.Post);
+            request.AddHeader("Authorization", "Bearer " + authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+            request.AddStringBody(contentAsString, DataFormat.Json);
+            await client.ExecuteAsync(request); 
+        });
+
+        if (WebhookInput.SharedEmails != null)
         {
             foreach (var sharedContact in WebhookInput.SharedEmails)
             {
                 string subscriptionForSharedContact = resource.Replace("/me", $"/users/{sharedContact}");
                 var subscriptionShared = new Subscription
                 {
-                    ChangeType = _subscriptionEvent,
-                    NotificationUrl = values["payloadUrl"],
+                    ChangeType = subscriptionEvent,
+                    NotificationUrl = values["payloadUrl"], //.Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app"),
                     Resource = subscriptionForSharedContact,
                     ExpirationDateTime = DateTimeOffset.Now + TimeSpan.FromMinutes(4210),
                     ClientState = ApplicationConstants.ClientState
                 };
-                await client.Subscriptions.PostAsync(subscriptionShared); 
+
+                var requestSharedInfo = client.Subscriptions.ToPostRequestInformation(subscriptionShared);
+                var requestSharedUriAsString = requestInfo.URI.ToString();
+                var contentSharedAsString = new StreamReader(requestInfo.Content).ReadToEnd();
+
+                Task.Run(async () =>
+                {
+                    await Task.Delay(1500);
+
+                    var client = new RestClient();
+                    var request = new RestRequest(requestSharedUriAsString, Method.Post);
+                    request.AddHeader("Authorization", "Bearer " + authenticationCredentialsProviders.First(p => p.KeyName == "Authorization").Value);
+                    request.AddStringBody(contentSharedAsString, DataFormat.Json);
+                    await client.ExecuteAsync(request);
+                });
+                
             }
         }
     }
@@ -61,11 +84,13 @@ public abstract class BaseWebhookHandler : IWebhookEventHandler<IWebhookInput>, 
         Dictionary<string, string> values)
     {
         var client = new MicrosoftOutlookClient(authenticationCredentialsProviders);
-        var subscriptions = (await client.Subscriptions.GetAsync()).Value.Where(s => s.NotificationUrl == values["payloadUrl"]).ToList();
-        foreach(var subscription in subscriptions)
+        var allSubscriptions = (await client.Subscriptions.GetAsync())!;
+        var subscriptions = allSubscriptions.Value!
+            .Where(s => s.NotificationUrl == values["payloadUrl"]).ToList(); //.Replace("https://localhost:44390", "https://fc16-176-36-119-50.ngrok-free.app")
+        foreach (var subscription in subscriptions)
         {
             await client.Subscriptions[subscription.Id].DeleteAsync();
-        } 
+        }
     }
     
     [Period(4200)]

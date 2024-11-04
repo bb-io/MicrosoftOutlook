@@ -5,14 +5,11 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.MicrosoftOutlook.Auth.OAuth2;
 
-public class OAuth2TokenService : BaseInvocable, IOAuth2TokenService
+public class OAuth2TokenService(InvocationContext invocationContext)
+    : BaseInvocable(invocationContext), IOAuth2TokenService
 { 
     private const string TokenUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
     private const string ExpiresAtKeyName = "expires_at";
-
-    public OAuth2TokenService(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
 
     public bool IsRefreshToken(Dictionary<string, string> values) 
         => values.TryGetValue(ExpiresAtKeyName, out var expireValue) && DateTime.UtcNow > DateTime.Parse(expireValue);
@@ -28,6 +25,7 @@ public class OAuth2TokenService : BaseInvocable, IOAuth2TokenService
             { "client_id", ApplicationConstants.ClientId },
             { "client_secret", ApplicationConstants.ClientSecret }
         };
+
         return await RequestToken(bodyParameters, cancellationToken);
     }
     
