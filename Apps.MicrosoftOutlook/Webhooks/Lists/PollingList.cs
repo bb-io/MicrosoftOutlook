@@ -11,7 +11,7 @@ namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 [PollingEventList]
 public class PollingList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
-    [PollingEvent("On email received", "This webhook is triggered when a new email is received.")]
+    [PollingEvent("On emails received", "This webhook is triggered when new emails are received.")]
     public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsReceived(
         PollingEventRequest<LastEmailMemory> request,
         PollingInput input)
@@ -45,7 +45,7 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         };
     }
 
-    [PollingEvent("On email with files attached received", "This webhook is triggered when an email with file attachments is received.")]
+    [PollingEvent("On emails with files attached received", "This webhook is triggered when emails with file attachments are received.")]
     public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsWithAttachmentsReceived(
         PollingEventRequest<LastEmailMemory> request,
         PollingInput input)
