@@ -45,8 +45,8 @@ Before you can connect you need to make sure that you have a Microsoft 365 accou
 
 - **On email created** is triggered when a new email is created in specified mail folder.
 - **On email updated** is triggered when an email is updated in specified mail folder.
-- **On email received** is triggered when a new email is received in inbox folder.
-- **On email with files attached received** is triggered when an email with file attachments is received in inbox folder.
+- **On emails received** is triggered when a new emails are received in inbox folder.
+- **On emails with files attached received** is triggered when emails with file attachments are received in inbox folder.
 
 ## Example
 
