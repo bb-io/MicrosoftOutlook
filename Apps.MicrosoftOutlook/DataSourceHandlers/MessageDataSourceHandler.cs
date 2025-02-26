@@ -4,14 +4,13 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
-public class MessageDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class MessageDataSourceHandler : BaseInvocable, IAsyncDataSourceItemHandler
 {
     public MessageDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
     }
 
-    public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
-        CancellationToken cancellationToken)
+    async Task<IEnumerable<DataSourceItem>> IAsyncDataSourceItemHandler.GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
         var messages = await client.Me.Messages.GetAsync(requestConfiguration =>
@@ -21,7 +20,7 @@ public class MessageDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
             requestConfiguration.QueryParameters.Select = new[] { "id", "subject", "sender" };
         }, cancellationToken);
 
-        return messages.Value.ToDictionary(m => m.Id, 
-            m => $"{m.Subject} <{m.Sender?.EmailAddress?.Name} {m.Sender?.EmailAddress?.Address}>");
+        return messages.Value.Select(m =>new DataSourceItem(m.Id,
+            $"{m.Subject} <{m.Sender?.EmailAddress?.Name} {m.Sender?.EmailAddress?.Address}>"));
     }
 }

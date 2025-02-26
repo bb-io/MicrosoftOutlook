@@ -5,25 +5,24 @@ using Microsoft.Graph.Models;
 
 namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
-public class EventOccurrenceDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class EventOccurrenceDataSourceHandler : BaseInvocable, IAsyncDataSourceItemHandler
 {
     public EventOccurrenceDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
     }
 
-    public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
-        CancellationToken cancellationToken)
+    async Task<IEnumerable<DataSourceItem>> IAsyncDataSourceItemHandler.GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {
         var searchString = context.SearchString;
         var events = await GetUpcomingEventOccurrences(cancellationToken);
-        var filteredEvents = events.Where(e => searchString == null 
-                                               || e.Subject.Contains(searchString, StringComparison.OrdinalIgnoreCase) 
+        var filteredEvents = events.Where(e => searchString == null
+                                               || e.Subject.Contains(searchString, StringComparison.OrdinalIgnoreCase)
                                                || e.Body.Content.Contains(searchString, StringComparison.OrdinalIgnoreCase)
                                                || e.Start.ToDateTime().ToLocalTime().ToString("MM/dd/yyyy HH:mm")
                                                    .Contains(searchString, StringComparison.OrdinalIgnoreCase)).Take(20);
-        
-        return filteredEvents.ToDictionary(e => e.Id, 
-            e => $"{e.Start.ToDateTime().ToLocalTime():MM/dd/yyyy HH:mm} {e.Subject}");
+
+        return filteredEvents.Select(e => new DataSourceItem(e.Id,
+            $"{e.Start.ToDateTime().ToLocalTime():MM/dd/yyyy HH:mm} {e.Subject}"));
     }
 
     private async Task<IEnumerable<Event>> GetUpcomingEventOccurrences(CancellationToken cancellationToken)

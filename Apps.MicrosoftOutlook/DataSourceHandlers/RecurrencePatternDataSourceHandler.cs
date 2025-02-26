@@ -4,14 +4,14 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
-public class RecurrencePatternDataSourceHandler : BaseInvocable, IDataSourceHandler
+public class RecurrencePatternDataSourceHandler : BaseInvocable, IDataSourceItemHandler
 {
     public RecurrencePatternDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
     }
 
-    public Dictionary<string, string> GetData(DataSourceContext context)
+    IEnumerable<DataSourceItem> IDataSourceItemHandler.GetData(DataSourceContext context)
     {
-        return new[] { "Daily", "Weekly", "Monthly" }.ToDictionary(p => p, p => p);
+        return new[] { "Daily", "Weekly", "Monthly" }.Select(p => new DataSourceItem(p,p));
     }
 }
