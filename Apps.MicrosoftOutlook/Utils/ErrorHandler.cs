@@ -15,6 +15,10 @@ public static class ErrorHandler
         {
             throw new PluginApplicationException(error.Error.Message);
         }
+        catch (Exception e)
+        {
+            throw new PluginApplicationException(e.Message);
+        }
     }
     
     public static async Task<T> ExecuteWithErrorHandlingAsync<T>(Func<Task<T>> action)
@@ -26,6 +30,10 @@ public static class ErrorHandler
         catch (ODataError error)
         {
             throw new PluginApplicationException(error.Error.Message);
+        }
+        catch (Exception e)
+        {
+            throw new PluginApplicationException(e.Message);
         }
     }
 }
