@@ -5,31 +5,10 @@ using Microsoft.Graph.Models;
 
 namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
-public class DraftMessageDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class DraftMessageDataSourceHandler : BaseInvocable, IAsyncDataSourceItemHandler
 {
     public DraftMessageDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
-    }
-
-    public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
-        CancellationToken cancellationToken)
-    {
-        IEnumerable<Message> messages;
-        if (string.IsNullOrEmpty(context.SearchString))
-            messages = await GetRecentDraftMessages(cancellationToken);
-        else
-        {
-            messages = await GetDraftMessages(cancellationToken);
-            messages = messages.Where(m => context.SearchString == null
-                                           || m.Subject.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase) 
-                                           || m.Body.Content.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase) 
-                                           || m.ToRecipients.Any(r => r.EmailAddress.Address.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase) 
-                                                                      || r.EmailAddress.Name.Contains(context.SearchString,StringComparison.OrdinalIgnoreCase)));
-            messages = messages.Take(20);
-        }
-
-        return messages.ToDictionary(m => m.Id, 
-            m => $"{m.Subject} <to: {string.Join(", ", m.ToRecipients.Select(r => r.EmailAddress.Address))}>");
     }
     
     private async Task<IEnumerable<Message>> GetRecentDraftMessages(CancellationToken cancellationToken)
@@ -53,5 +32,25 @@ public class DraftMessageDataSourceHandler : BaseInvocable, IAsyncDataSourceHand
             requestConfiguration.QueryParameters.Select = new[] { "id", "subject", "body", "toRecipients" };
         }, cancellationToken);
         return messages.Value;
+    }
+
+    async Task<IEnumerable<DataSourceItem>> IAsyncDataSourceItemHandler.GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
+    {
+        IEnumerable<Message> messages;
+        if (string.IsNullOrEmpty(context.SearchString))
+            messages = await GetRecentDraftMessages(cancellationToken);
+        else
+        {
+            messages = await GetDraftMessages(cancellationToken);
+            messages = messages.Where(m => context.SearchString == null
+                                           || m.Subject.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase)
+                                           || m.Body.Content.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase)
+                                           || m.ToRecipients.Any(r => r.EmailAddress.Address.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase)
+                                                                      || r.EmailAddress.Name.Contains(context.SearchString, StringComparison.OrdinalIgnoreCase)));
+            messages = messages.Take(20);
+        }
+
+        return messages.Select(m => new DataSourceItem(m.Id,
+            $"{m.Subject} <to: {string.Join(", ", m.ToRecipients.Select(r => r.EmailAddress.Address))}>"));
     }
 }

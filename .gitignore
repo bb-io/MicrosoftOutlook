@@ -289,3 +289,4 @@ __pycache__/
 *.xsd.cs
 
 /Apps.MicrosoftOutlook/ApplicationConstants.cs
+/Tests.MicrosoftOutlook/appsettings.json

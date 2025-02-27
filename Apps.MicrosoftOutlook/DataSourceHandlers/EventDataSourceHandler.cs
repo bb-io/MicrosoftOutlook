@@ -5,22 +5,10 @@ using Microsoft.Graph.Models;
 
 namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
-public class EventDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
+public class EventDataSourceHandler : BaseInvocable, IAsyncDataSourceItemHandler
 {
     public EventDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
     {
-    }
-
-    public async Task<Dictionary<string, string>> GetDataAsync(DataSourceContext context,
-        CancellationToken cancellationToken)
-    {
-        IEnumerable<Event> events;
-        if (string.IsNullOrEmpty(context.SearchString))
-            events = await GetEventsFromMainCalendar(cancellationToken);
-        else
-            events = await GetEventsFromAllCalendars(context.SearchString, cancellationToken);
-        
-        return events.ToDictionary(e => e.Id, e => e.Subject);
     }
 
     private async Task<IEnumerable<Event>> GetEventsFromMainCalendar(CancellationToken cancellationToken)
@@ -53,5 +41,16 @@ public class EventDataSourceHandler : BaseInvocable, IAsyncDataSourceHandler
         }
 
         return events;
+    }
+
+    async Task<IEnumerable<DataSourceItem>> IAsyncDataSourceItemHandler.GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
+    {
+        IEnumerable<Event> events;
+        if (string.IsNullOrEmpty(context.SearchString))
+            events = await GetEventsFromMainCalendar(cancellationToken);
+        else
+            events = await GetEventsFromAllCalendars(context.SearchString, cancellationToken);
+
+        return events.Select(e => new DataSourceItem(e.Id,e.Subject));
     }
 }
