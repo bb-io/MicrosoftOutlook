@@ -189,7 +189,7 @@ public class MailActions : BaseInvocable
                 ContentType = request.File.ContentType
             };
 
-            attachment = (FileAttachment) await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].Attachments.PostAsync(requestBody));
+            attachment = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].Attachments.PostAsync(requestBody)) as FileAttachment;
         }
         else
         {
@@ -212,7 +212,7 @@ public class MailActions : BaseInvocable
             var fileUploadTask = new LargeFileUploadTask<FileAttachment>(uploadSession, memoryStream, chunkSize);
             var uploadResult = await fileUploadTask.UploadAsync();
             var attachmentId = uploadResult.Location.Segments[^1].Split("'")[^2];
-            attachment = (FileAttachment)await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].Attachments[attachmentId].GetAsync());
+            attachment = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].Attachments[attachmentId].GetAsync()) as FileAttachment;
         }
 
         return new FileAttachmentDto(attachment, fileManagementClient);
