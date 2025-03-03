@@ -11,6 +11,7 @@ using Microsoft.Graph.Models;
 using Microsoft.Graph.Models.ODataErrors;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Apps.MicrosoftOutlook.Utils;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.MicrosoftOutlook.Actions;
 
@@ -36,6 +37,9 @@ public class MailActions : BaseInvocable
     public async Task<ListRecentMessagesResponse> ListRecentMessages(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListRecentMessagesRequest request)
     {
+        if (!int.TryParse(request.Hours?.ToString(), out var intHours))
+            throw new PluginMisconfigurationException($"Invalid Hours value: {request.Hours} must be an integer value. Please check the input hours.");
+
         MessageCollectionResponse? messages;
         var messagesList = new List<Message>();
         var startDateTime = (DateTime.Now - TimeSpan.FromHours(request.Hours ?? 24)).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
