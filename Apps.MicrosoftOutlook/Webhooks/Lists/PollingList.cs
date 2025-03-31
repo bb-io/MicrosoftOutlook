@@ -6,6 +6,7 @@ using Microsoft.Graph.Models.ODataErrors;
 using Microsoft.Graph.Models;
 using Apps.MicrosoftOutlook.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common.Exceptions;
+using Apps.MicrosoftOutlook.Utils;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 [PollingEventList]
@@ -92,17 +93,17 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
             do
             {
                 if (input.MailFolderId == null)
-                    messages = client.Me.Messages.GetAsync(requestConfiguration =>
+                    messages = ErrorHandler.ExecuteWithErrorHandlingAsync(() => client.Me.Messages.GetAsync(requestConfiguration =>
                     {
                         requestConfiguration.QueryParameters.Filter = requestFilter;
                         requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
-                    }).Result;
+                    })).Result;
                 else
-                    messages = client.Me.MailFolders[input.MailFolderId].Messages.GetAsync(requestConfiguration =>
+                    messages = ErrorHandler.ExecuteWithErrorHandlingAsync(() => client.Me.MailFolders[input.MailFolderId].Messages.GetAsync(requestConfiguration =>
                     {
                         requestConfiguration.QueryParameters.Filter = requestFilter;
                         requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
-                    }).Result;
+                    })).Result;
                 messagesList.AddRange(messages.Value);
                 skipMessagesAmount += 10;
             } while (messages.OdataNextLink != null);
@@ -121,7 +122,7 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         if(!message.HasAttachments.HasValue || !message.HasAttachments.Value)
             return false;
 
-        var attachments = client.Me.Messages[message.Id].Attachments.GetAsync().Result;
+        var attachments = ErrorHandler.ExecuteWithErrorHandlingAsync(() => client.Me.Messages[message.Id].Attachments.GetAsync()).Result;
         var fileAttachments = attachments?.Value?.Where(a => a is FileAttachment);
 
         if (fileAttachments == null || !fileAttachments.Any())
