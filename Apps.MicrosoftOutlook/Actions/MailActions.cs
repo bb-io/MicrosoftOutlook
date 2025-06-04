@@ -22,7 +22,7 @@ public class MailActions : BaseInvocable
 
     IFileManagementClient fileManagementClient;
 
-    public MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient): base(invocationContext)
+    public MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
     {
         this.fileManagementClient = fileManagementClient;
         outlookClient = new MicrosoftOutlookClient(invocationContext.AuthenticationCredentialsProviders);
@@ -165,16 +165,17 @@ public class MailActions : BaseInvocable
         {
             Message = new Message
             {
-                From = string.IsNullOrEmpty(request.SenderEmail) ? null : new Recipient() { EmailAddress = new EmailAddress() { Address = request.SenderEmail } },
+                From = string.IsNullOrEmpty(request.SenderEmail) ? null : new Recipient() { EmailAddress = new EmailAddress() { Address = request.SenderEmail.Trim() } },
                 Subject = request.Subject,
                 Body = new ItemBody { ContentType = BodyType.Html, Content = request.Content },
-                ToRecipients = new List<Recipient>(request.RecipientEmails
-                    .Select(email => new Recipient { EmailAddress = new EmailAddress { Address = email } }))
+                ToRecipients = request.RecipientEmails.Select(email => new Recipient { EmailAddress = new EmailAddress { Address = email.Trim() } })
+                    .ToList()
             }
         };
+        
         await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.SendMail.PostAsync(requestBody));
     }
-
+ 
     [Action("Attach file to draft message", Description = "Attach file to a draft message.")]
     public async Task<FileAttachmentDto> AttachFileToDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] AttachFileToDraftMessageRequest request)
