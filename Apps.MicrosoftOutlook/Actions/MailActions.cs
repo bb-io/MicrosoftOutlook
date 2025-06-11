@@ -154,6 +154,16 @@ public class MailActions : BaseInvocable
     public async Task SendDraftMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] SendDraftMessageRequest request)
     {
+        if (request == null)
+        {
+            throw new PluginMisconfigurationException("Input cannot be null. Please check your input and try again");
+        }
+
+        if (string.IsNullOrEmpty(request.MessageId))
+        {
+            throw new PluginMisconfigurationException("Message ID is required to send a draft message. Please check your input and try again");
+        }
+
         await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].Send.PostAsync());
     }
 
