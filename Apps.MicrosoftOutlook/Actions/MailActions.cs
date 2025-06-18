@@ -163,6 +163,16 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
     public async Task SendNewMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] SendNewMessageRequest request)
     {
+        if (request.RecipientEmails == null || !request.RecipientEmails.Any())
+        {
+            throw new PluginMisconfigurationException("At least one recipient email is required. Please check your input and try again");
+        }
+
+        if (string.IsNullOrEmpty(request.Subject))
+        {
+            throw new PluginMisconfigurationException("The email subject is required. Please check your input and try again");
+        }
+
         var requestBody = new Microsoft.Graph.Me.SendMail.SendMailPostRequestBody
         {
             Message = new Message
