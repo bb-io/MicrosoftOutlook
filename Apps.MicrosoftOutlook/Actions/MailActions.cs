@@ -8,7 +8,6 @@ using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
-using Microsoft.Graph.Models.ODataErrors;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Apps.MicrosoftOutlook.Utils;
 using Blackbird.Applications.Sdk.Common.Exceptions;
@@ -16,18 +15,11 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 namespace Apps.MicrosoftOutlook.Actions;
 
 [ActionList]
-public class MailActions : BaseInvocable
+public class MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : BaseInvocable(invocationContext)
 {
-    MicrosoftOutlookClient outlookClient;
+    MicrosoftOutlookClient outlookClient = new MicrosoftOutlookClient(invocationContext.AuthenticationCredentialsProviders);
 
-    IFileManagementClient fileManagementClient;
-
-    public MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
-    {
-        this.fileManagementClient = fileManagementClient;
-        outlookClient = new MicrosoftOutlookClient(invocationContext.AuthenticationCredentialsProviders);
-
-    }
+    IFileManagementClient fileManagementClient = fileManagementClient;
     #region GET
 
     [Action("List most recent messages", Description = "List messages received during past hours. If number of " +
