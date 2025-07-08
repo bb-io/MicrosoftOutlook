@@ -48,8 +48,7 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
 
     [PollingEvent("On emails with files attached received", "This webhook is triggered when emails with file attachments are received.")]
     public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsWithAttachmentsReceived(
-        PollingEventRequest<LastEmailMemory> request,
-        PollingInput input)
+        PollingEventRequest<LastEmailMemory> request,[PollingEventParameter] PollingInput input)
     {
         if (request.Memory == null)
         {
@@ -112,8 +111,9 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         {
             throw new PluginMisconfigurationException(error.Error.Message);
         }
-        var messagesDtos = messagesList.Where(x => withAttachments ? MessageWithSenderAndAttachmentsFilter(client, x, input) : MessageWithSenderFilter(x, input)).Select(m => new ReceivedMessageDto(m));
-        newLastDateTime = messagesDtos.Any() ? messagesDtos.Last().SentDateTime : previousLastDateTime.Value;
+
+        var messagesDtos = messagesList.Where(x => withAttachments ? MessageWithSenderAndAttachmentsFilter(client, x, input) : MessageWithSenderFilter(x, input)).Select(m => new ReceivedMessageDto(m)).ToList();
+        newLastDateTime = messagesDtos.Any() ? messagesDtos.Max(m => m.SentDateTime) : previousLastDateTime ?? DateTime.UtcNow;
         return messagesDtos;
     }
 
