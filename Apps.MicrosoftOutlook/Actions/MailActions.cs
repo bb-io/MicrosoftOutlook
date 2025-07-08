@@ -76,9 +76,10 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
         [ActionParameter] ListAttachedFilesRequest request)
     {
         var attachments = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].Attachments.GetAsync());
-        var fileAttachments = attachments.Value.Where(a => a is FileAttachment);
-        var fileAttachmentsDto =
-            fileAttachments.Select(a => new FileAttachmentDto((FileAttachment)a, fileManagementClient));
+
+        var fileAttachments = attachments?.Value?.Where(a => a is FileAttachment) ?? Enumerable.Empty<Microsoft.Graph.Models.Attachment>();
+
+        var fileAttachmentsDto = fileAttachments.Select(a => new FileAttachmentDto((FileAttachment)a, fileManagementClient));
         return new ListAttachmentsResponse
         {
             Attachments = fileAttachmentsDto
