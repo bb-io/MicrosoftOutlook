@@ -5,7 +5,7 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.MicrosoftOutlook.Actions;
 
-[ActionList]
+[ActionList("Debug")]
 public class DebugActions(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
     [Action("Debug", Description = "Debug")]
