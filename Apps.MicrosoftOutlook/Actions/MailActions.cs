@@ -14,12 +14,10 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.MicrosoftOutlook.Actions;
 
-[ActionList]
+[ActionList("Mail")]
 public class MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : BaseInvocable(invocationContext)
 {
     MicrosoftOutlookClient outlookClient = new MicrosoftOutlookClient(invocationContext.AuthenticationCredentialsProviders);
-
-    IFileManagementClient fileManagementClient = fileManagementClient;
     #region GET
 
     [Action("List most recent messages", Description = "List messages received during past hours. If number of " +
