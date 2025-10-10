@@ -9,6 +9,7 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 using Apps.MicrosoftOutlook.Utils;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
+
 [PollingEventList]
 public class PollingList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
