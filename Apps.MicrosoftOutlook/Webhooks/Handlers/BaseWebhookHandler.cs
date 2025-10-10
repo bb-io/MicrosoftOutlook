@@ -3,7 +3,6 @@ using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Webhooks;
 using Microsoft.Graph.Models;
 using RestSharp;
-using System.IO;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Handlers;
 

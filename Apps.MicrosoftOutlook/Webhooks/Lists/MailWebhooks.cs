@@ -1,6 +1,5 @@
 ﻿using Apps.MicrosoftOutlook.Dtos;
 using Apps.MicrosoftOutlook.Webhooks.Handlers.Mail;
-using Apps.MicrosoftOutlook.Webhooks.Inputs;
 using Apps.MicrosoftOutlook.Webhooks.Lists.ItemGetters;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Webhooks;
