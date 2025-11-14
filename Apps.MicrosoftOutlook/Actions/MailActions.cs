@@ -64,6 +64,10 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
     public async Task<MessageDto> GetMessage(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] GetMessageRequest request)
     {
+        if (string.IsNullOrEmpty(request.MessageId))
+        {
+            throw new PluginMisconfigurationException("Message ID is required to get a message. Please check your input and try again");
+        }
         var message = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].GetAsync());
         var messageDto = new MessageDto(message);
         return messageDto;
