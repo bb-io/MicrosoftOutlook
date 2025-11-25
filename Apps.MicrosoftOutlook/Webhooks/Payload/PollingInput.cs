@@ -14,5 +14,11 @@ public class PollingInput
     [Display("Message folder")]
     [DataSource(typeof(MailFolderDataSourceHandler))]
     public string? MailFolderId { get; set; }
+
+    [Display("Content contains")]
+    public string? ContentContains { get; set; }
+
+    [Display("Subject contains")]
+    public string? SubjectContains { get; set; }
 }
 

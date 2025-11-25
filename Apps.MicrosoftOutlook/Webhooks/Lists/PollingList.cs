@@ -16,7 +16,7 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
     [PollingEvent("On emails received", "This webhook is triggered when new emails are received.")]
     public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsReceived(
         PollingEventRequest<LastEmailMemory> request,
-        PollingInput input)
+        [PollingEventParameter] PollingInput input)
     {
         if (request.Memory == null)
         {
@@ -49,7 +49,7 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
 
     [PollingEvent("On emails with files attached received", "This webhook is triggered when emails with file attachments are received.")]
     public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsWithAttachmentsReceived(
-        PollingEventRequest<LastEmailMemory> request,[PollingEventParameter] PollingInput input)
+        PollingEventRequest<LastEmailMemory> request, [PollingEventParameter] PollingInput input)
     {
         if (request.Memory == null)
         {
@@ -136,6 +136,12 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         if (input.ReceiverEmail is not null && receiverEmails is not null && receiverEmails.All(x => x != input.ReceiverEmail))
             return false;
 
+        if (input.SubjectContains is not null && message?.Subject?.Contains(input.SubjectContains, StringComparison.InvariantCultureIgnoreCase) != true)
+            return false;
+
+        if (input.ContentContains is not null && message?.Body?.Content?.Contains(input.ContentContains, StringComparison.InvariantCultureIgnoreCase) != true)
+            return false;
+
         return true;
     }
 
@@ -149,6 +155,12 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
 
         var receiverEmails = message?.ToRecipients?.Select(r => r.EmailAddress?.Address);
         if (input.ReceiverEmail is not null && receiverEmails is not null && receiverEmails.All(x => x != input.ReceiverEmail))
+            return false;
+
+        if (input.SubjectContains is not null && message?.Subject?.Contains(input.SubjectContains, StringComparison.InvariantCultureIgnoreCase) != true)
+            return false;
+
+        if (input.ContentContains is not null && message?.Body?.Content?.Contains(input.ContentContains, StringComparison.InvariantCultureIgnoreCase) != true)
             return false;
 
         return true;
