@@ -35,13 +35,36 @@ public class MailFolderDataSourceHandler(InvocationContext invocationContext)
 
         List<FileDataItem> folders = [];
         foreach (var folder in response.Value)
-            folders.Append(new Folder { Id = folder.Id!, DisplayName = folder.DisplayName!, IsSelectable = true });
+            folders.Add(new Folder { Id = folder.Id!, DisplayName = folder.DisplayName!, IsSelectable = true });
 
         return folders;
     }
 
     public async Task<IEnumerable<FolderPathItem>> GetFolderPathAsync(FolderPathDataSourceContext context, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
+
+        if (string.IsNullOrEmpty(context.FileDataItemId))
+            return [];
+
+        var folder = await client.Me.MailFolders[context.FileDataItemId].GetAsync(
+            request => request.QueryParameters.Select = ["id", "displayName", "parentFolderId"],
+            ct
+        );
+
+        var breadCrumbs = new List<FolderPathItem> { new() { Id = folder.Id, DisplayName = folder.DisplayName! } }; 
+        var parentFolderId = folder.ParentFolderId;
+        while (!string.IsNullOrEmpty(parentFolderId))
+        {
+            var parentFolder = await client.Me.MailFolders[parentFolderId].GetAsync(
+                request => request.QueryParameters.Select = ["id", "displayName", "parentFolderId"],
+                ct
+            );
+            breadCrumbs.Add(new FolderPathItem { Id = parentFolder.Id, DisplayName = parentFolder.DisplayName! });
+            parentFolderId = parentFolder.ParentFolderId;
+        }
+
+        breadCrumbs.Reverse();
+        return breadCrumbs;
     }
 }
