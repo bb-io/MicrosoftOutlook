@@ -33,7 +33,11 @@ public class MailFolderDataSourceHandler(InvocationContext invocationContext)
         if (response is null || response.Value is null)
             return [];
 
-        return response.Value.Select(x => new Folder { Id = x.Id!, DisplayName = x.DisplayName!, IsSelectable = true }).ToList();
+        List<FileDataItem> folders = [];
+        foreach (var folder in response.Value)
+            folders.Append(new Folder { Id = folder.Id!, DisplayName = folder.DisplayName!, IsSelectable = true });
+
+        return folders;
     }
 
     public async Task<IEnumerable<FolderPathItem>> GetFolderPathAsync(FolderPathDataSourceContext context, CancellationToken ct)
