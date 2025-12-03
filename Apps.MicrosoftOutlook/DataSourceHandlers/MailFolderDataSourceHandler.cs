@@ -11,6 +11,8 @@ namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 public class MailFolderDataSourceHandler(InvocationContext invocationContext) 
     : BaseInvocable(invocationContext), IAsyncFileDataSourceItemHandler
 {
+    private const string RootDisplayName = "Mailbox";
+
     public async Task<IEnumerable<FileDataItem>> GetFolderContentAsync(FolderContentDataSourceContext context, CancellationToken ct)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
@@ -50,7 +52,7 @@ public class MailFolderDataSourceHandler(InvocationContext invocationContext)
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
 
         if (string.IsNullOrEmpty(context.FileDataItemId))
-            return [];
+            return new List<FolderPathItem> { new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName } };
 
         var folder = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => 
             await client.Me.MailFolders[context.FileDataItemId].GetAsync(
@@ -83,7 +85,9 @@ public class MailFolderDataSourceHandler(InvocationContext invocationContext)
             parentFolderId = parentFolder.ParentFolderId;
         }
 
+        breadCrumbs.Add(new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName });
         breadCrumbs.Reverse();
+        
         return breadCrumbs;
     }
 }
