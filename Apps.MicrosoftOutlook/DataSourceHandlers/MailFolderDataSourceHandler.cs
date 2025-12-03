@@ -86,6 +86,7 @@ public class MailFolderDataSourceHandler(InvocationContext invocationContext)
         }
 
         breadCrumbs.Add(new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName });
+        breadCrumbs.RemoveAt(0);
         breadCrumbs.Reverse();
         
         return breadCrumbs;
