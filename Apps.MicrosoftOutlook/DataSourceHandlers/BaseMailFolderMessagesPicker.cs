@@ -51,6 +51,7 @@ public class BaseMailFolderMessagesPicker(InvocationContext invocationContext) :
                     {
                         request.QueryParameters.Select = ["id", "subject", "sender", "receivedDateTime"];
                         request.QueryParameters.Top = 20;
+                        request.QueryParameters.Orderby = ["receivedDateTime desc"];
                     },
                     ct
                 )
