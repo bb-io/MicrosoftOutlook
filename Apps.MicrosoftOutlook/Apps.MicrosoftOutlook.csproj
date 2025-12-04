@@ -4,16 +4,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Product>Microsoft 365 Email (Outlook)</Product>
-    <Version>1.0.29</Version>
+    <Version>1.0.30</Version>
     <Description>Microsoft 365 Email app that allows you to access your emails</Description>
     <AssemblyName>Apps.MicrosoftOutlook</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.14.0" />
-    <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.0.2-alpha3" />
+    <PackageReference Include="Blackbird.Applications.SDK.Extensions.FileManagement" Version="1.1.0" />
     <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.26" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.73" />
-    <PackageReference Include="Microsoft.Graph" Version="5.71.0" />
+    <PackageReference Include="Microsoft.Graph" Version="5.97.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.0-preview.1.25080.5" />
   </ItemGroup>
   <ItemGroup>

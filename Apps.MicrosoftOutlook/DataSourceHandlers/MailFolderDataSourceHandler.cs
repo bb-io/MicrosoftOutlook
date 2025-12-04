@@ -1,26 +1,33 @@
-﻿using Blackbird.Applications.Sdk.Common;
-using Blackbird.Applications.Sdk.Common.Dynamic;
+﻿using Apps.MicrosoftOutlook.Utils;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Models.FileDataSourceItems;
 
 namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
-public class MailFolderDataSourceHandler : BaseInvocable, IAsyncDataSourceItemHandler
+public class MailFolderDataSourceHandler(InvocationContext invocationContext) 
+    : BaseMailFolderMessagesPicker(invocationContext), IAsyncFileDataSourceItemHandler
 {
-    public MailFolderDataSourceHandler(InvocationContext invocationContext) : base(invocationContext)
+    public async Task<IEnumerable<FileDataItem>> GetFolderContentAsync(FolderContentDataSourceContext context, CancellationToken ct)
     {
+        return await GetFolderContent(context.FolderId, true, false, ct);
     }
 
-    async Task<IEnumerable<DataSourceItem>> IAsyncDataSourceItemHandler.GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<FolderPathItem>> GetFolderPathAsync(FolderPathDataSourceContext context, CancellationToken ct)
     {
+        if (string.IsNullOrEmpty(context.FileDataItemId))
+            return [new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName }];
 
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
-        var mailFolders = await client.Me.MailFolders.GetAsync(requestConfiguration =>
-        {
-            requestConfiguration.QueryParameters.Select = new[] { "id", "displayName" };
-            requestConfiguration.QueryParameters.Filter = $"contains(displayName, '{context.SearchString ?? ""}')";
-        }
-            , cancellationToken);
 
-        return mailFolders.Value.Select(f =>new DataSourceItem(f.Id,f.DisplayName));
+        var currentFolder = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+            await client.Me.MailFolders[context.FileDataItemId].GetAsync(
+                request => request.QueryParameters.Select = ["id", "displayName", "parentFolderId"],
+                ct
+            )
+        );
+        if (currentFolder == null) return [];
+
+        return await BuildParentPathAsync(currentFolder.ParentFolderId, ct);
     }
 }

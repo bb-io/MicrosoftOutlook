@@ -15,9 +15,10 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 namespace Apps.MicrosoftOutlook.Actions;
 
 [ActionList("Mail")]
-public class MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : BaseInvocable(invocationContext)
+public class MailActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) 
+    : BaseInvocable(invocationContext)
 {
-    MicrosoftOutlookClient outlookClient = new MicrosoftOutlookClient(invocationContext.AuthenticationCredentialsProviders);
+    private readonly MicrosoftOutlookClient outlookClient = new(invocationContext.AuthenticationCredentialsProviders);
     #region GET
 
     [Action("List most recent messages", Description = "List messages received during past hours. If number of " +
@@ -27,8 +28,12 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
     public async Task<ListRecentMessagesResponse> ListRecentMessages(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
         [ActionParameter] ListRecentMessagesRequest request)
     {
-        if (!int.TryParse(request.Hours?.ToString(), out var intHours))
-            throw new PluginMisconfigurationException($"Invalid Hours value: {request.Hours} must be an integer value. Please check the input hours.");
+        if (request.Hours.HasValue && !int.TryParse(request.Hours?.ToString(), out var intHours))
+        {
+            throw new PluginMisconfigurationException(
+                $"Invalid Hours value: {request.Hours} must be an integer value. Please check the input hours."
+            );
+        }
 
         MessageCollectionResponse? messages;
         var messagesList = new List<Message>();
