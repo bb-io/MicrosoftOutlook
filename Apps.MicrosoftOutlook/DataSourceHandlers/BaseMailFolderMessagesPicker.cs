@@ -10,9 +10,9 @@ namespace Apps.MicrosoftOutlook.DataSourceHandlers;
 
 public class BaseMailFolderMessagesPicker(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
-    private const string RootDisplayName = "Mailbox";
+    protected const string RootDisplayName = "Mailbox";
 
-    public async Task<IEnumerable<FileDataItem>> GetFolderContent(
+    protected async Task<IEnumerable<FileDataItem>> GetFolderContent(
         string? folderId,
         bool foldersAreSelectable,
         bool messagesAreSelectable,
@@ -98,46 +98,39 @@ public class BaseMailFolderMessagesPicker(InvocationContext invocationContext) :
         return result;
     }
 
-    public async Task<IEnumerable<FolderPathItem>> GetFolderPath(string? fileDataItemId, CancellationToken ct)
+    protected async Task<List<FolderPathItem>> BuildParentPathAsync(string? startFolderId, CancellationToken ct)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
+        var breadCrumbs = new List<FolderPathItem>();
 
-        if (string.IsNullOrEmpty(fileDataItemId))
-            return new List<FolderPathItem> { new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName } };
-
-        var folder = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
-            await client.Me.MailFolders[fileDataItemId].GetAsync(
-                request => request.QueryParameters.Select = ["id", "displayName", "parentFolderId"],
-                ct
-            )
-        );
-
-        var rootFolder = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+        var root = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => 
             await client.Me.MailFolders["msgfolderroot"].GetAsync(
-                request => request.QueryParameters.Select = ["id"],
+                r => r.QueryParameters.Select = ["id"], 
                 ct
             )
         );
+        var rootId = root?.Id;
 
-        var breadCrumbs = new List<FolderPathItem> { new() { Id = folder!.Id!, DisplayName = folder.DisplayName! } };
-        var parentFolderId = folder.ParentFolderId;
-        while (!string.IsNullOrEmpty(parentFolderId))
+        var currentId = startFolderId;
+        while (!string.IsNullOrEmpty(currentId))
         {
-            if (parentFolderId == rootFolder!.Id)
-                break;
+            if (currentId == rootId) break;
+            if (breadCrumbs.Any(b => b.Id == currentId)) break;
 
-            var parentFolder = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
-                await client.Me.MailFolders[parentFolderId].GetAsync(
+            var folder = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+                await client.Me.MailFolders[currentId].GetAsync(
                     request => request.QueryParameters.Select = ["id", "displayName", "parentFolderId"],
                     ct
                 )
             );
-            breadCrumbs.Add(new FolderPathItem { Id = parentFolder!.Id!, DisplayName = parentFolder.DisplayName! });
-            parentFolderId = parentFolder.ParentFolderId;
+
+            if (folder == null) break;
+
+            breadCrumbs.Add(new FolderPathItem { Id = folder.Id!, DisplayName = folder.DisplayName! });
+            currentId = folder.ParentFolderId;
         }
 
         breadCrumbs.Add(new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName });
-        breadCrumbs.RemoveAt(0);
         breadCrumbs.Reverse();
 
         return breadCrumbs;

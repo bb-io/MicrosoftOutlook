@@ -1,4 +1,5 @@
-﻿using Blackbird.Applications.Sdk.Common.Invocation;
+﻿using Apps.MicrosoftOutlook.Utils;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Models.FileDataSourceItems;
 
@@ -14,6 +15,18 @@ public class MessageDataSourceHandler(InvocationContext invocationContext)
 
     public async Task<IEnumerable<FolderPathItem>> GetFolderPathAsync(FolderPathDataSourceContext context, CancellationToken ct)
     {
-        return await GetFolderPath(context.FileDataItemId, ct);
+        if (string.IsNullOrEmpty(context.FileDataItemId)) return [];
+
+        var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
+
+        var message = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+            await client.Me.Messages[context.FileDataItemId].GetAsync(
+                request => request.QueryParameters.Select = ["parentFolderId"],
+                ct
+            )
+        );
+        if (message == null) return [];
+
+        return await BuildParentPathAsync(message.ParentFolderId, ct);
     }
 }
