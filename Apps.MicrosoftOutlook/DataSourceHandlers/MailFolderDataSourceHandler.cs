@@ -28,9 +28,6 @@ public class MailFolderDataSourceHandler(InvocationContext invocationContext)
         );
         if (currentFolder == null) return [];
 
-        var path = await BuildParentPathAsync(currentFolder.ParentFolderId, ct);
-        path.Add(new FolderPathItem { Id = currentFolder.Id!, DisplayName = currentFolder.DisplayName! });
-
-        return path;
+        return await BuildParentPathAsync(currentFolder.ParentFolderId, ct);
     }
 }

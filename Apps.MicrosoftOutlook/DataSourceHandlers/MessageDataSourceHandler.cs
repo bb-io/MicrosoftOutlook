@@ -15,7 +15,8 @@ public class MessageDataSourceHandler(InvocationContext invocationContext)
 
     public async Task<IEnumerable<FolderPathItem>> GetFolderPathAsync(FolderPathDataSourceContext context, CancellationToken ct)
     {
-        if (string.IsNullOrEmpty(context.FileDataItemId)) return [];
+        if (string.IsNullOrEmpty(context.FileDataItemId))
+            return [new FolderPathItem { Id = string.Empty, DisplayName = RootDisplayName }];
 
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
 
