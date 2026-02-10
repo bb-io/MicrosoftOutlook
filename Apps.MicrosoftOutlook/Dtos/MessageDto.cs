@@ -18,8 +18,21 @@ public class MessageDto
         CreatedDateTime = message.CreatedDateTime?.ToLocalTime().ToString(CultureInfo.CurrentCulture); 
         SentDateTime = message.SentDateTime?.ToLocalTime().ToString(CultureInfo.CurrentCulture);
         RecipientEmails = message.ToRecipients?.Select(r => r.EmailAddress.Address);
+        CcRecipientEmails = message.CcRecipients?
+           .Select(r => r.EmailAddress?.Address)
+           .Where(x => !string.IsNullOrWhiteSpace(x))
+           .Distinct()
+           .ToList()
+           ?? new List<string>();
+
+        BccRecipientEmails = message.BccRecipients?
+            .Select(r => r.EmailAddress?.Address)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList()
+            ?? new List<string>();
     }
-    
+
     [Display("Message ID")]
     public string MessageId { get; set; }
     
@@ -46,4 +59,10 @@ public class MessageDto
     
     [Display("Recipient emails")]
     public IEnumerable<string> RecipientEmails { get; set; }
+
+    [Display("CC recipient emails")]
+    public IEnumerable<string> CcRecipientEmails { get; set; } = new List<string>();
+
+    [Display("BCC recipient emails")]
+    public IEnumerable<string> BccRecipientEmails { get; set; } = new List<string>();
 }

@@ -73,7 +73,25 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
         {
             throw new PluginMisconfigurationException("Message ID is required to get a message. Please check your input and try again");
         }
-        var message = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () => await outlookClient.Me.Messages[request.MessageId].GetAsync());
+        var message = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+        await outlookClient.Me.Messages[request.MessageId].GetAsync(cfg =>
+        {
+            cfg.QueryParameters.Select = new[]
+            {
+                "id",
+                "subject",
+                "weblink",
+                "sender",
+                "body",
+                "isdraft",
+                "createddatetime",
+                "sentdatetime",
+                "torecipients",
+                "ccrecipients",
+                "bccrecipients"
+            };
+        })
+    );
         var messageDto = new MessageDto(message);
         return messageDto;
     }
