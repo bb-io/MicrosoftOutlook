@@ -14,6 +14,10 @@ public class ReceivedMessageDto
         SenderEmail = message.Sender?.EmailAddress?.Address;
         Content = message.Body?.Content;
         IsDraft = message.IsDraft.Value;
+
+        ReceivedDateTimeUtc = message.ReceivedDateTime?.UtcDateTime ?? DateTime.MinValue;
+        SentDateTimeUtc = message.SentDateTime?.UtcDateTime ?? DateTime.MinValue;
+
         CreatedDateTime = message.CreatedDateTime?.ToLocalTime().ToString(CultureInfo.CurrentCulture);
         SentDateTime = message.SentDateTime?.DateTime ?? DateTime.MinValue;
         RecipientEmails = message.ToRecipients?.Select(r => r.EmailAddress.Address);
@@ -45,5 +49,11 @@ public class ReceivedMessageDto
 
     [Display("Recipient emails")]
     public IEnumerable<string> RecipientEmails { get; set; }
+
+    [Display("Received (UTC)")]
+    public DateTime ReceivedDateTimeUtc { get; set; }
+
+    [Display("Sent (UTC)")]
+    public DateTime SentDateTimeUtc { get; set; }
 }
 
