@@ -12,6 +12,9 @@ public class PollingInput
     [Display("Receiver email")]
     public string? ReceiverEmail { get; set; }
 
+    [Display("CC email")]
+    public string? CcEmail { get; set; }
+
     [Display("Message folder")]
     [FileDataSource(typeof(MailFolderDataSourceHandler))]
     public string? MailFolderId { get; set; }
