@@ -35,7 +35,7 @@ public class PollingTests : TestBase
 
         var pollingRequest = new PollingEventRequest<LastEmailMemory>
         {
-            Memory = null
+            Memory = new LastEmailMemory { LastEmailDateTime = DateTime.UtcNow.AddMinutes(-6), LastMessageIdsAtLastDateTime = new List<string>()}
         };
         var pollinInput = new PollingInput
         {

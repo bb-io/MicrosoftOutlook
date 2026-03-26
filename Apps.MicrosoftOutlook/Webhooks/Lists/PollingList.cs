@@ -260,6 +260,9 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         if (input.ReceiverEmail is not null && receiverEmails is not null && receiverEmails.All(x => x != input.ReceiverEmail))
             return false;
 
+        if (!HasMatchingCcRecipient(message, input.CcEmail))
+            return false;
+
         if (input.SubjectContains is not null && message?.Subject?.Contains(input.SubjectContains, StringComparison.InvariantCultureIgnoreCase) != true)
             return false;
 
@@ -281,6 +284,9 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         if (input.ReceiverEmail is not null && receiverEmails is not null && receiverEmails.All(x => x != input.ReceiverEmail))
             return false;
 
+        if (!HasMatchingCcRecipient(message, input.CcEmail))
+            return false;
+
         if (input.SubjectContains is not null && message?.Subject?.Contains(input.SubjectContains, StringComparison.InvariantCultureIgnoreCase) != true)
             return false;
 
@@ -288,6 +294,19 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
             return false;
 
         return true;
+    }
+
+    private bool HasMatchingCcRecipient(Message message, string? ccEmail)
+    {
+        if (string.IsNullOrWhiteSpace(ccEmail))
+            return true;
+
+        var normalizedCcEmail = ccEmail.Trim();
+        var ccRecipients = message.CcRecipients?
+            .Select(r => r.EmailAddress?.Address?.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+
+        return ccRecipients?.Any(x => string.Equals(x, normalizedCcEmail, StringComparison.InvariantCultureIgnoreCase)) == true;
     }
 }
 
