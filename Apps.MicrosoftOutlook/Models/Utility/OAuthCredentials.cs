@@ -20,13 +20,16 @@ public class OAuthCredentials
             ? "https://login.microsoftonline.com/common/oauth2/v2.0" 
             : $"https://login.microsoftonline.com/{tenantId}/oauth2/v2.0";
 
+        string? emailOnlyScopes = values.GetValueOrDefault(CredNames.EmailsOnly);
+        string scope = emailOnlyScopes == "yes" ? ApplicationConstants.EmailsOnlyScope : ApplicationConstants.Scope;
+        
         return new OAuthCredentials
         {
             ClientId = clientId,
             ClientSecret = secret,
             AuthorizeUrl = $"{baseAuthUrl}/authorize",
             TokenUrl = $"{baseAuthUrl}/token",
-            Scopes = ApplicationConstants.Scope
+            Scopes = scope
         };
     }
 }
