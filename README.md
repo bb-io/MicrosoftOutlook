@@ -16,10 +16,11 @@ Before you can connect you need to make sure that you have a Microsoft 365 accou
 
 1. Navigate to apps and search for Microsoft 365 Email.
 2. Click _Add Connection_.
-3. Name your connection for future reference e.g. 'My organization'.
-4. Click _Authorize connection_.
-5. Follow the instructions that Microsoft gives you, authorizing Blackbird.io to act on your behalf. 
-6. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
+3. Select the connection type you want to use: either standard OAuth or OAuth (Emails only) to only send emails.
+4. Name your connection for future reference e.g. 'My organization'.
+5. Click _Authorize connection_.
+6. Follow the instructions that Microsoft gives you, authorizing Blackbird.io to act on your behalf. 
+7. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
 
 ![Connecting](image/README/connecting.png)
 
