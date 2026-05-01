@@ -10,13 +10,13 @@ public class ConnectionDefinition : IConnectionDefinition
     [
         new()
         {
-            Name = ConnectionType.OAuth,
+            Name = ConnectionTypes.OAuth,
             AuthenticationType = ConnectionAuthenticationType.OAuth2,
             ConnectionProperties = []
         },
         new()
         {
-            Name = ConnectionType.OAuthEmailsOnly,
+            Name = ConnectionTypes.OAuthEmailsOnly,
             DisplayName = "OAuth (Send emails only)",
             AuthenticationType = ConnectionAuthenticationType.OAuth2,
             ConnectionProperties = []
@@ -25,7 +25,16 @@ public class ConnectionDefinition : IConnectionDefinition
 
     public IEnumerable<AuthenticationCredentialsProvider> CreateAuthorizationCredentialsProviders(Dictionary<string, string> values)
     {
-        var token = values.First(v => v.Key == "access_token");
-        yield return new AuthenticationCredentialsProvider("Authorization",$"{token.Value}");
+        string token = values.First(v => v.Key == "access_token").Value;
+        var providers = new List<AuthenticationCredentialsProvider> { new("Authorization", token) };
+        
+        var connectionType = values[nameof(ConnectionPropertyGroup)] switch
+        {
+            var ct when ConnectionTypes.SupportedConnectionTypes.Contains(ct) => ct,
+            _ => throw new Exception($"Unknown connection type: {values[nameof(ConnectionPropertyGroup)]}")
+        };
+
+        providers.Add(new AuthenticationCredentialsProvider(CredNames.ConnectionType, connectionType));
+        return providers;
     }
 }

@@ -1,4 +1,5 @@
-﻿using Blackbird.Applications.Sdk.Common;
+﻿using Apps.MicrosoftOutlook.Constants;
+using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Microsoft.AspNetCore.WebUtilities;
@@ -12,11 +13,19 @@ public class OAuth2AuthorizeService(InvocationContext invocationContext)
     {
         string bridgeOauthUrl = $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/oauth";
         const string oauthUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
+
+        string scope = values.GetValueOrDefault(CredNames.ConnectionType) switch
+        {
+            ConnectionTypes.OAuth => ApplicationConstants.Scope,
+            ConnectionTypes.OAuthEmailsOnly => ApplicationConstants.EmailsOnlyScope,
+            _ => ApplicationConstants.Scope
+        };
+
         var parameters = new Dictionary<string, string>
         {
             { "client_id", ApplicationConstants.ClientId },
             { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
-            { "scope", ApplicationConstants.Scope },
+            { "scope", scope },
             { "state", values["state"] },
             { "response_type", "code" },
             { "authorization_url", oauthUrl},
