@@ -10,7 +10,7 @@ public class CalendarDataSourceHandler : BaseInvocable, IAsyncDataSourceItemHand
     {
     }
 
-    async Task<IEnumerable<DataSourceItem>> IAsyncDataSourceItemHandler.GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<DataSourceItem>> GetDataAsync(DataSourceContext context, CancellationToken cancellationToken)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
         var calendars = await client.Me.Calendars.GetAsync(requestConfiguration =>
