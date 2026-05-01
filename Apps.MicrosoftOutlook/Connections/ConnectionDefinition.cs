@@ -1,4 +1,5 @@
-﻿using Blackbird.Applications.Sdk.Common.Authentication;
+﻿using Apps.MicrosoftOutlook.Constants;
+using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Connections;
 
 namespace Apps.MicrosoftOutlook.Connections;
@@ -9,9 +10,16 @@ public class ConnectionDefinition : IConnectionDefinition
     [
         new()
         {
-            Name = "OAuth",
+            Name = ConnectionType.OAuth,
             AuthenticationType = ConnectionAuthenticationType.OAuth2,
-            ConnectionProperties = new List<ConnectionProperty> { }
+            ConnectionProperties = []
+        },
+        new()
+        {
+            Name = ConnectionType.OAuthEmailsOnly,
+            DisplayName = "OAuth (Send emails only)",
+            AuthenticationType = ConnectionAuthenticationType.OAuth2,
+            ConnectionProperties = []
         },
     ];
 
