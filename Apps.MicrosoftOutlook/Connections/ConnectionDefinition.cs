@@ -16,10 +16,14 @@ public class ConnectionDefinition : IConnectionDefinition
         },
         new()
         {
-            Name = ConnectionTypes.OAuthEmailsOnly,
-            DisplayName = "OAuth (Send emails only)",
+            Name = ConnectionTypes.OAuthAzure,
+            DisplayName = "OAuth (Azure app)",
             AuthenticationType = ConnectionAuthenticationType.OAuth2,
-            ConnectionProperties = []
+            ConnectionProperties = [
+                new(CredNames.AzureClientId) { DisplayName = "Application (client) ID" },
+                new(CredNames.AzureTenantId) { DisplayName = "Directory (tenant) ID" },
+                new(CredNames.AzureClientSecret) { DisplayName = "Client secret", Sensitive = true }
+            ]
         },
     ];
 

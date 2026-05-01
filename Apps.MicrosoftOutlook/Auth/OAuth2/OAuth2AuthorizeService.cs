@@ -1,4 +1,4 @@
-﻿using Apps.MicrosoftOutlook.Constants;
+﻿using Apps.MicrosoftOutlook.Models.Utility;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -12,25 +12,19 @@ public class OAuth2AuthorizeService(InvocationContext invocationContext)
     public string GetAuthorizationUrl(Dictionary<string, string> values)
     {
         string bridgeOauthUrl = $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/oauth";
-        const string oauthUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize";
-
-        string scope = values.GetValueOrDefault(CredNames.ConnectionType) switch
+        var oauthCreds = OAuthCredentials.GetOAuthCredentials(values);
+        
+        var parameters = new Dictionary<string, string?>
         {
-            ConnectionTypes.OAuth => ApplicationConstants.Scope,
-            ConnectionTypes.OAuthEmailsOnly => ApplicationConstants.EmailsOnlyScope,
-            _ => ApplicationConstants.Scope
-        };
-
-        var parameters = new Dictionary<string, string>
-        {
-            { "client_id", ApplicationConstants.ClientId },
+            { "client_id", oauthCreds.ClientId },
             { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
-            { "scope", scope },
+            { "scope", oauthCreds.Scopes },
             { "state", values["state"] },
             { "response_type", "code" },
-            { "authorization_url", oauthUrl},
+            { "authorization_url", oauthCreds.AuthorizeUrl },
             { "actual_redirect_uri", InvocationContext.UriInfo.AuthorizationCodeRedirectUri.ToString() },
         };
+        
         return QueryHelpers.AddQueryString(bridgeOauthUrl, parameters);
     }
 }
