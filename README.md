@@ -12,16 +12,41 @@ Microsoft 365 Email is a personal information manager software system that allow
 
 Before you can connect you need to make sure that you have a Microsoft 365 account.
 
+### Azure app
+
+If you want to use a custom Azure application for authorization, you should do the following:
+
+- Go to Azure > _App registrations_ > _New registration_.
+- Enter the name of your application and choose the supported account types. Click _Register_.
+- Go to _Manage_ > _API permissions_ and select the required scopes:
+    * _If you only need to send emails_, select the following permissions: User.Read, Mail.Send, offline_access
+    * _If you want to be able to fully use this Outlook app_, select the following permissions: 
+    User.Read, Calendars.ReadWrite, Contacts.ReadWrite, Mail.ReadWrite, Mail.Send, Mail.ReadWrite.Shared, offline_access
+- Go to _Manage_ > _Authentication_ and click _Add a platform_. Choose _Web_ and enter this redirect URI: https://bridge.blackbird.io/api/AuthorizationCode
+- Go to _Manage_ > _Certificates & secrets_ and click _New client secret_. Enter a description (optional) and set the expiration time. **Copy the created secret value, as you won't be able to see it again**.
+- Go to _Overview_ and copy the _Application (client) ID_ and _Directory (tenant) ID_. Use these values to register your connection in Blackbird.
+
 ## Connecting
 
-1. Navigate to apps and search for Microsoft 365 Email.
-2. Click _Add Connection_.
-3. Name your connection for future reference e.g. 'My organization'.
-4. Click _Authorize connection_.
-5. Follow the instructions that Microsoft gives you, authorizing Blackbird.io to act on your behalf. 
-6. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
+Navigate to apps and search for Microsoft 365 Email, click _Add Connection_, name your connection for future reference 
+and select the connection type you want to use.
+
+### OAuth
+
+1. Click _Authorize connection_.
+2. Follow the instructions that Microsoft gives you, authorizing Blackbird.io to act on your behalf.
+3. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
 
 ![Connecting](image/README/connecting.png)
+
+### OAuth (Azure app)
+
+1. Under _Only allow email sending scopes_ specify _Yes_ if you want to only send emails using this app.
+2. Enter the _Application (client) ID_, _Directory (tenant) ID_ and _Client secret_ obtained from your custom Azure app.
+3. Follow the instructions that Microsoft gives you, authorizing Blackbird.io to act on your behalf.
+4. When you return to Blackbird, confirm that the connection has appeared and the status is _Connected_.
+
+![Connecting using Azure app](image/README/azure.png)
 
 ## Actions
 

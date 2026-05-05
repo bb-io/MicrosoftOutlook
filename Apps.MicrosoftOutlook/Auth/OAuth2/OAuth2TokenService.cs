@@ -3,13 +3,13 @@ using Blackbird.Applications.Sdk.Common.Authentication;
 using Blackbird.Applications.Sdk.Common.Authentication.OAuth2;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using System.Text.Json;
+using Apps.MicrosoftOutlook.Models.Utility;
 
 namespace Apps.MicrosoftOutlook.Auth.OAuth2;
 
 public class OAuth2TokenService(InvocationContext invocationContext)
     : BaseInvocable(invocationContext), IOAuth2TokenService, ITokenRefreshable
 { 
-    private const string TokenUrl = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
     private const string ExpiresAtKeyName = "expires_at";
 
     public bool IsRefreshToken(Dictionary<string, string> values) 
@@ -30,32 +30,36 @@ public class OAuth2TokenService(InvocationContext invocationContext)
 
     public async Task<Dictionary<string, string>> RefreshToken(Dictionary<string, string> values, 
         CancellationToken cancellationToken) 
-    { 
-        const string grantType = "refresh_token";
+    {
+        var creds = OAuthCredentials.GetOAuthCredentials(values);
         var bodyParameters = new Dictionary<string, string>
         {
-            { "grant_type", grantType },
+            { "grant_type", "refresh_token" },
             { "refresh_token", values["refresh_token"] },
-            { "client_id", ApplicationConstants.ClientId },
-            { "client_secret", ApplicationConstants.ClientSecret }
+            { "client_id", creds.ClientId },
+            { "client_secret", creds.ClientSecret }
         };
 
-        return await RequestToken(bodyParameters, cancellationToken);
+        return await RequestToken(bodyParameters, creds.TokenUrl, cancellationToken);
     }
     
-    public async Task<Dictionary<string, string?>> RequestToken(string state, string code, 
-        Dictionary<string, string> values, CancellationToken cancellationToken)
-    { 
-        const string grantType = "authorization_code"; 
-        var bodyParameters = new Dictionary<string, string> 
-        { 
+    public async Task<Dictionary<string, string>> RequestToken(
+        string state,
+        string code,
+        Dictionary<string, string> values,
+        CancellationToken cancellationToken)
+    {
+        var creds = OAuthCredentials.GetOAuthCredentials(values);
+        var bodyParameters = new Dictionary<string, string>
+        {
+            { "grant_type", "authorization_code" },
+            { "client_id", creds.ClientId },
+            { "client_secret", creds.ClientSecret },
             { "code", code },
-            { "grant_type", grantType },
-            { "client_id", ApplicationConstants.ClientId }, 
-            { "client_secret", ApplicationConstants.ClientSecret },
-            { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" }
+            { "redirect_uri", $"{InvocationContext.UriInfo.BridgeServiceUrl.ToString().TrimEnd('/')}/AuthorizationCode" },
         };
-        return await RequestToken(bodyParameters, cancellationToken);
+
+        return await RequestToken(bodyParameters, creds.TokenUrl, cancellationToken);
     }
 
     public Task RevokeToken(Dictionary<string, string> values)
@@ -63,21 +67,45 @@ public class OAuth2TokenService(InvocationContext invocationContext)
         throw new NotImplementedException();
     }
     
-    private async Task<Dictionary<string, string>> RequestToken(Dictionary<string, string> bodyParameters, 
+    private async Task<Dictionary<string, string>> RequestToken(
+        Dictionary<string, string> bodyParameters,
+        string tokenUrl,
         CancellationToken cancellationToken)
-    { 
+    {
         var utcNow = DateTime.UtcNow;
-        using HttpClient httpClient = new HttpClient(); 
-        httpClient.DefaultRequestHeaders.Add("Accept", "application/json"); 
-        using var httpContent = new FormUrlEncodedContent(bodyParameters); 
-        using var response = await httpClient.PostAsync(TokenUrl, httpContent, cancellationToken); 
-        var responseContent = await response.Content.ReadAsStringAsync(); 
-        var resultDictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent)?
-                                       .ToDictionary(r => r.Key, r => r.Value?.ToString()) 
-                                   ?? throw new InvalidOperationException($"Invalid response content: {responseContent}");
-        var expiresIn = int.Parse(resultDictionary["expires_in"]);
-        var expiresAt = utcNow.AddSeconds(expiresIn);
-        resultDictionary.Add(ExpiresAtKeyName, expiresAt.ToString());
-        return resultDictionary;
+        using HttpClient httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+        using var httpContent = new FormUrlEncodedContent(bodyParameters);
+
+        try
+        {
+            using var response = await httpClient.PostAsync(tokenUrl, httpContent, cancellationToken);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                InvocationContext.Logger?.LogError(
+                    $"[MicrosoftOutlookOAuth2] Token request failed with status {response.StatusCode}. Response: {responseContent}",
+                    []);
+                response.EnsureSuccessStatusCode(); // This will throw
+            }
+
+            var resultDictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(responseContent)?
+                                       .ToDictionary(r => r.Key, r => r.Value?.ToString()) ?? 
+                                   throw new InvalidOperationException($"Invalid response content: {responseContent}");
+            var expiresIn = int.Parse(resultDictionary["expires_in"]);
+            var expiresAt = utcNow.AddSeconds(expiresIn);
+            resultDictionary.Add(ExpiresAtKeyName, expiresAt.ToString());
+            return resultDictionary;
+        }
+        catch (Exception ex)
+        {
+            var parameters = bodyParameters.ToDictionary(p => p.Key, p => p.Value);
+            InvocationContext.Logger?.LogError(
+                $"[MicrosoftOutlookOAuth2] Failed to request token. Exception: {ex.Message}; Parameters: {JsonSerializer.Serialize(parameters)}",
+                []);
+
+            throw;
+        }
     }
 }

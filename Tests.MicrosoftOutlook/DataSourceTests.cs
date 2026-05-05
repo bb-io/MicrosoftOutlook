@@ -39,4 +39,18 @@ public class DataSourceTests : TestBase
         Console.WriteLine(Newtonsoft.Json.JsonConvert.SerializeObject(result));
         Assert.IsNotNull(result);
     }
+
+    [TestMethod]
+    public async Task CalendarDataSourceHandler_ReturnsCalendars()
+    {
+        // Arrange
+        var handler = new CalendarDataSourceHandler(InvocationContext);
+
+        // Act
+        var result = await handler.GetDataAsync(new(), CancellationToken.None);
+
+        // Assert
+        foreach (var item in result)
+            Console.WriteLine($"{item.Value} - {item.DisplayName}");
+    }
 }
