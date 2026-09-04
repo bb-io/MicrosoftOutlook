@@ -185,6 +185,8 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
                             requestConfiguration.QueryParameters.Top = pageSize;
                             requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
                             requestConfiguration.QueryParameters.Orderby = new[] { "sentDateTime asc" };
+                            if (withAttachments)
+                                requestConfiguration.QueryParameters.Expand = new[] { "attachments($select=id)" };
                         })).Result;
                 }
                 else
@@ -196,6 +198,8 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
                             requestConfiguration.QueryParameters.Top = pageSize;
                             requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
                             requestConfiguration.QueryParameters.Orderby = new[] { "sentDateTime asc" };
+                            if (withAttachments)
+                                requestConfiguration.QueryParameters.Expand = new[] { "attachments($select=id)" };
                         })).Result;
                 }
 
@@ -213,7 +217,7 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
 
         var filtered = messagesList.Where(x =>
                 withAttachments
-                    ? MessageWithSenderAndAttachmentsFilter(client, x, input)
+                    ? MessageWithSenderAndAttachmentsFilter(x, input)
                     : MessageWithSenderFilter(x, input))
             .ToList();
 
@@ -242,15 +246,12 @@ public class PollingList(InvocationContext invocationContext) : BaseInvocable(in
         return dtos;
     }
 
-    private bool MessageWithSenderAndAttachmentsFilter(MicrosoftOutlookClient client, Message message, PollingInput input)
+    private bool MessageWithSenderAndAttachmentsFilter(Message message, PollingInput input)
     {
         if (!message.HasAttachments.HasValue || !message.HasAttachments.Value)
             return false;
 
-        var attachments = ErrorHandler.ExecuteWithErrorHandlingAsync(() => client.Me.Messages[message.Id].Attachments.GetAsync()).Result;
-        var fileAttachments = attachments?.Value?.Where(a => a is FileAttachment);
-
-        if (fileAttachments == null || !fileAttachments.Any())
+        if (message.Attachments?.Any(a => a is FileAttachment) != true)
             return false;
 
         if (input.Email is not null && message?.Sender?.EmailAddress?.Address != input.Email)
