@@ -21,7 +21,7 @@ If you want to use a custom Azure application for authorization, you should do t
 - Go to _Manage_ > _API permissions_ and select the required scopes:
     * _If you only need to send emails_, select the following permissions: User.Read, Mail.Send, offline_access
     * _If you want to be able to fully use this Outlook app_, select the following permissions: 
-    User.Read, Calendars.ReadWrite, Contacts.ReadWrite, Mail.ReadWrite, Mail.Send, Mail.ReadWrite.Shared, offline_access
+    User.Read, Calendars.ReadWrite, Contacts.ReadWrite, Mail.ReadWrite, Mail.Send, Mail.ReadWrite.Shared, MailboxSettings.Read, offline_access
 - Go to _Manage_ > _Authentication_ and click _Add a platform_. Choose _Web_ and enter this redirect URI: https://bridge.blackbird.io/api/AuthorizationCode
 - Go to _Manage_ > _Certificates & secrets_ and click _New client secret_. Enter a description (optional) and set the expiration time. **Copy the created secret value, as you won't be able to see it again**.
 - Go to _Overview_ and copy the _Application (client) ID_ and _Directory (tenant) ID_. Use these values to register your connection in Blackbird.
@@ -58,6 +58,7 @@ and select the connection type you want to use.
 - **Attach file to draft message**.
 - **Update draft message subject**.
 - **Update draft message body**.
+- **Add category to message** adds a category to a message while preserving its existing categories.
 - **Add recipients to draft message** adds one or more email recipients to an existing recipients list of a draft message.
 - **Remove recipients from draft message** removes one or more email recipients from an existing recipients list of a draft message.
 - **Send draft message**.
