@@ -31,6 +31,8 @@ public class MessageDto
             .Distinct()
             .ToList()
             ?? new List<string>();
+
+        Categories = message.Categories ?? new List<string>();
     }
 
     [Display("Message ID")]
@@ -65,4 +67,6 @@ public class MessageDto
 
     [Display("BCC recipient emails")]
     public IEnumerable<string> BccRecipientEmails { get; set; } = new List<string>();
+
+    public IEnumerable<string> Categories { get; set; } = new List<string>();
 }

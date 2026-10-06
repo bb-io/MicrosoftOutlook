@@ -88,7 +88,8 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
                 "sentdatetime",
                 "torecipients",
                 "ccrecipients",
-                "bccrecipients"
+                "bccrecipients",
+                "categories"
             };
         })
     );
@@ -264,6 +265,45 @@ public class MailActions(InvocationContext invocationContext, IFileManagementCli
     #endregion
 
     #region PATCH 
+
+    [Action("Add category to message", Description = "Add a category to a message while preserving its existing categories.")]
+    public async Task<MessageDto> AddCategoryToMessage(
+        IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+        [ActionParameter] AddMessageCategoryRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.MessageId))
+        {
+            throw new PluginMisconfigurationException(
+                "Message ID is required to add a category. Please check your input and try again");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Category))
+        {
+            throw new PluginMisconfigurationException(
+                "Category is required. Please check your input and try again");
+        }
+
+        var category = request.Category.Trim();
+        var existingMessage = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+            await outlookClient.Me.Messages[request.MessageId].GetAsync(configuration =>
+                configuration.QueryParameters.Select = ["categories"]));
+
+        var categories = existingMessage?.Categories?.ToList() ?? [];
+        if (!categories.Contains(category, StringComparer.OrdinalIgnoreCase))
+        {
+            categories.Add(category);
+        }
+
+        var requestBody = new Message
+        {
+            Categories = categories
+        };
+        var message = await ErrorHandler.ExecuteWithErrorHandlingAsync(async () =>
+            await outlookClient.Me.Messages[request.MessageId].PatchAsync(requestBody))
+            ?? throw new PluginApplicationException("Microsoft Graph returned an empty response after updating the message category");
+
+        return new MessageDto(message);
+    }
 
     [Action("Update draft message subject", Description = "Update the subject of a draft message.")]
     public async Task<MessageDto> UpdateDraftMessageSubject(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
