@@ -2,248 +2,119 @@
 using Apps.MicrosoftOutlook.Webhooks.Memory;
 using Apps.MicrosoftOutlook.Webhooks.Payload;
 using Blackbird.Applications.Sdk.Common;
-using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.Sdk.Common.Polling;
 using Microsoft.Graph.Models;
-using Microsoft.Graph.Models.ODataErrors;
-using System.Globalization;
 
 namespace Apps.MicrosoftOutlook.Webhooks.Lists;
 
 [PollingEventList]
 public class PollingList(InvocationContext invocationContext) : BaseInvocable(invocationContext)
 {
+    private const int MessagesPageSize = 50;
+
     [PollingEvent("On emails received", "This webhook is triggered when new emails are received.")]
-    public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsReceived(
+    public Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsReceived(
         PollingEventRequest<LastEmailMemory> request,
         [PollingEventParameter] PollingInput input)
     {
-        if (request.Memory == null)
-        {
-            var initialEmails = GetNewReceivedEmails(
-                previousLastDateTime: null,
-                input: input,
-                withAttachments: false,
-                out var initLastDateTime,
-                lastIdsAtLastDateTime: null);
-
-            return new()
-            {
-                FlyBird = false,
-                Memory = new()
-                {
-                    LastEmailDateTime = initLastDateTime,
-                    LastMessageIdsAtLastDateTime = initialEmails
-                        .Where(x => x.SentDateTime == initLastDateTime)
-                        .Select(x => x.MessageId)
-                        .Distinct()
-                        .ToList()
-                }
-            };
-        }
-
-        var receivedEmails = GetNewReceivedEmails(
-            previousLastDateTime: request.Memory.LastEmailDateTime,
-            input: input,
-            withAttachments: false,
-            out var nextLastDateTime,
-            lastIdsAtLastDateTime: request.Memory.LastMessageIdsAtLastDateTime);
-
-        if (!receivedEmails.Any())
-        {
-            return new()
-            {
-                FlyBird = false,
-                Memory = new()
-                {
-                    LastEmailDateTime = nextLastDateTime,
-                    LastMessageIdsAtLastDateTime = request.Memory.LastMessageIdsAtLastDateTime ?? new()
-                }
-            };
-        }
-
-        var idsAtMaxTime = receivedEmails
-            .Where(x => x.SentDateTime == nextLastDateTime)
-            .Select(x => x.MessageId)
-            .Distinct()
-            .ToList();
-
-        var nextIds = nextLastDateTime > request.Memory.LastEmailDateTime
-            ? idsAtMaxTime
-            : (request.Memory.LastMessageIdsAtLastDateTime ?? new()).Union(idsAtMaxTime).Distinct().ToList();
-
-        return new()
-        {
-            FlyBird = true,
-            Memory = new()
-            {
-                LastEmailDateTime = nextLastDateTime,
-                LastMessageIdsAtLastDateTime = nextIds
-            },
-            Result = new() { Emails = receivedEmails.ToList() }
-        };
+        return PollNewEmails(request, input, withAttachments: false);
     }
 
     [PollingEvent("On emails with files attached received", "This webhook is triggered when emails with file attachments are received.")]
-    public async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsWithAttachmentsReceived(
+    public Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> OnEmailsWithAttachmentsReceived(
         PollingEventRequest<LastEmailMemory> request, [PollingEventParameter] PollingInput input)
     {
+        return PollNewEmails(request, input, withAttachments: true);
+    }
+
+    private async Task<PollingEventResponse<LastEmailMemory, ReceivedMessagesResponse>> PollNewEmails(
+        PollingEventRequest<LastEmailMemory> request, PollingInput input, bool withAttachments)
+    {
+        var utcNow = DateTime.UtcNow;
+
         if (request.Memory == null)
         {
-            var initialEmails = GetNewReceivedEmails(
-                previousLastDateTime: null,
-                input: input,
-                withAttachments: true,
-                out var initLastDateTime,
-                lastIdsAtLastDateTime: null);
-
             return new()
             {
                 FlyBird = false,
-                Memory = new()
-                {
-                    LastEmailDateTime = initLastDateTime,
-                    LastMessageIdsAtLastDateTime = initialEmails
-                        .Where(x => x.SentDateTime == initLastDateTime)
-                        .Select(x => x.MessageId)
-                        .Distinct()
-                        .ToList()
-                }
+                Memory = LastEmailMemoryTracker.CreateInitial(utcNow)
             };
         }
 
-        var receivedEmails = GetNewReceivedEmails(
-            previousLastDateTime: request.Memory.LastEmailDateTime,
-            input: input,
-            withAttachments: true,
-            out var nextLastDateTime,
-            lastIdsAtLastDateTime: request.Memory.LastMessageIdsAtLastDateTime);
+        var memory = LastEmailMemoryTracker.Normalize(request.Memory, utcNow);
+        var receivedMessages = await GetMessagesReceivedSince(memory, input.MailFolderId, withAttachments);
+        var unseenEmails = LastEmailMemoryTracker.ExcludeAlreadySeen(
+            receivedMessages.Select(message => new ReceivedMessageDto(message)), memory);
+        var unseenIds = unseenEmails.Select(email => email.MessageId).ToHashSet();
 
-        if (!receivedEmails.Any())
-        {
-            return new()
-            {
-                FlyBird = false,
-                Memory = new()
-                {
-                    LastEmailDateTime = nextLastDateTime,
-                    LastMessageIdsAtLastDateTime = request.Memory.LastMessageIdsAtLastDateTime ?? new()
-                }
-            };
-        }
-
-        var idsAtMaxTime = receivedEmails
-            .Where(x => x.SentDateTime == nextLastDateTime)
-            .Select(x => x.MessageId)
-            .Distinct()
+        var matchingEmails = receivedMessages
+            .Where(message => unseenIds.Contains(message.Id) && MatchesInput(message, input, withAttachments))
+            .Select(message => new ReceivedMessageDto(message))
             .ToList();
-
-        var nextIds = nextLastDateTime > request.Memory.LastEmailDateTime
-            ? idsAtMaxTime
-            : (request.Memory.LastMessageIdsAtLastDateTime ?? new()).Union(idsAtMaxTime).Distinct().ToList();
 
         return new()
         {
-            FlyBird = true,
-            Memory = new()
-            {
-                LastEmailDateTime = nextLastDateTime,
-                LastMessageIdsAtLastDateTime = nextIds
-            },
-            Result = new() { Emails = receivedEmails.ToList() }
+            FlyBird = matchingEmails.Count > 0,
+            Memory = LastEmailMemoryTracker.Advance(memory, unseenEmails),
+            Result = matchingEmails.Count > 0 ? new() { Emails = matchingEmails } : null
         };
     }
 
-    private IEnumerable<ReceivedMessageDto> GetNewReceivedEmails(DateTime? previousLastDateTime, PollingInput input, bool withAttachments, out DateTime newLastDateTime,
-            List<string>? lastIdsAtLastDateTime)
+    private async Task<List<Message>> GetMessagesReceivedSince(LastEmailMemory memory, string? mailFolderId,
+        bool withAttachments)
     {
         var client = new MicrosoftOutlookClient(InvocationContext.AuthenticationCredentialsProviders);
+        var requestFilter = LastEmailMemoryTracker.BuildNewEmailsFilter(memory);
+        var messagesList = new List<Message>();
+        var skipMessagesAmount = 0;
         MessageCollectionResponse? messages;
 
-        var messagesList = new List<Message>();
-
-        var startDateTime = (previousLastDateTime ?? DateTime.UtcNow.AddDays(-3))
-            .ToUniversalTime()
-            .ToString("o", CultureInfo.InvariantCulture);
-
-        var requestFilter = $"sentDateTime gt {startDateTime}";
-
-        const int pageSize = 50;
-        var skipMessagesAmount = 0;
-
-        try
+        do
         {
-            do
+            messages = await GetMessagesPage(client, mailFolderId, requestFilter, skipMessagesAmount, withAttachments);
+            if (messages?.Value != null)
+                messagesList.AddRange(messages.Value);
+
+            skipMessagesAmount += MessagesPageSize;
+        }
+        while (messages?.OdataNextLink != null);
+
+        return messagesList
+            .GroupBy(message => message.Id)
+            .Select(group => group.First())
+            .ToList();
+    }
+
+    private bool MatchesInput(Message message, PollingInput input, bool withAttachments) =>
+        withAttachments
+            ? MessageWithSenderAndAttachmentsFilter(message, input)
+            : MessageWithSenderFilter(message, input);
+
+    private static Task<MessageCollectionResponse?> GetMessagesPage(MicrosoftOutlookClient client, string? mailFolderId,
+        string requestFilter, int skipMessagesAmount, bool withAttachments)
+    {
+        string[]? expand = withAttachments ? ["attachments($select=id)"] : null;
+        string[] orderBy = [LastEmailMemoryTracker.OrderBy];
+
+        if (mailFolderId == null)
+            return ErrorHandler.ExecuteWithErrorHandlingAsync(() => client.Me.Messages.GetAsync(configuration =>
             {
-                if (input.MailFolderId == null)
-                {
-                    messages = ErrorHandler.ExecuteWithErrorHandlingAsync(() =>
-                        client.Me.Messages.GetAsync(requestConfiguration =>
-                        {
-                            requestConfiguration.QueryParameters.Filter = requestFilter;
-                            requestConfiguration.QueryParameters.Top = pageSize;
-                            requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
-                            requestConfiguration.QueryParameters.Orderby = new[] { "sentDateTime asc" };
-                            if (withAttachments)
-                                requestConfiguration.QueryParameters.Expand = new[] { "attachments($select=id)" };
-                        })).Result;
-                }
-                else
-                {
-                    messages = ErrorHandler.ExecuteWithErrorHandlingAsync(() =>
-                        client.Me.MailFolders[input.MailFolderId].Messages.GetAsync(requestConfiguration =>
-                        {
-                            requestConfiguration.QueryParameters.Filter = requestFilter;
-                            requestConfiguration.QueryParameters.Top = pageSize;
-                            requestConfiguration.QueryParameters.Skip = skipMessagesAmount;
-                            requestConfiguration.QueryParameters.Orderby = new[] { "sentDateTime asc" };
-                            if (withAttachments)
-                                requestConfiguration.QueryParameters.Expand = new[] { "attachments($select=id)" };
-                        })).Result;
-                }
+                configuration.QueryParameters.Filter = requestFilter;
+                configuration.QueryParameters.Top = MessagesPageSize;
+                configuration.QueryParameters.Skip = skipMessagesAmount;
+                configuration.QueryParameters.Orderby = orderBy;
+                configuration.QueryParameters.Expand = expand;
+            }));
 
-                if (messages?.Value != null)
-                    messagesList.AddRange(messages.Value);
-
-                skipMessagesAmount += pageSize;
-            }
-            while (messages?.OdataNextLink != null);
-        }
-        catch (ODataError error)
+        return ErrorHandler.ExecuteWithErrorHandlingAsync(() => client.Me.MailFolders[mailFolderId].Messages.GetAsync(configuration =>
         {
-            throw new PluginMisconfigurationException(error.Error.Message);
-        }
-
-        var filtered = messagesList.Where(x =>
-                withAttachments
-                    ? MessageWithSenderAndAttachmentsFilter(x, input)
-                    : MessageWithSenderFilter(x, input))
-            .ToList();
-
-        filtered = filtered
-            .GroupBy(m => m.Id)
-            .Select(g => g.First())
-            .ToList();
-
-        var dtos = filtered
-            .Select(m => new ReceivedMessageDto(m))
-            .ToList();
-
-        if (previousLastDateTime.HasValue && lastIdsAtLastDateTime != null && lastIdsAtLastDateTime.Count > 0)
-        {
-            dtos = dtos
-                .Where(d =>
-                    d.SentDateTime > previousLastDateTime.Value ||
-                    (d.SentDateTime == previousLastDateTime.Value && !lastIdsAtLastDateTime.Contains(d.MessageId)))
-                .ToList();
-        }
-
-        newLastDateTime = dtos.Any()
-            ? dtos.Max(m => m.SentDateTime)
-            : previousLastDateTime ?? DateTime.UtcNow;
-
-        return dtos;
+            configuration.QueryParameters.Filter = requestFilter;
+            configuration.QueryParameters.Top = MessagesPageSize;
+            configuration.QueryParameters.Skip = skipMessagesAmount;
+            configuration.QueryParameters.Orderby = orderBy;
+            configuration.QueryParameters.Expand = expand;
+        }));
     }
 
     private bool MessageWithSenderAndAttachmentsFilter(Message message, PollingInput input)

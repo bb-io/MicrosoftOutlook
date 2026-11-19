@@ -13,7 +13,7 @@ public class ReceivedMessageDto
         SenderName = message.Sender?.EmailAddress?.Name;
         SenderEmail = message.Sender?.EmailAddress?.Address;
         Content = message.Body?.Content;
-        IsDraft = message.IsDraft.Value;
+        IsDraft = message.IsDraft ?? false;
 
         ReceivedDateTimeUtc = message.ReceivedDateTime?.UtcDateTime ?? DateTime.MinValue;
         SentDateTimeUtc = message.SentDateTime?.UtcDateTime ?? DateTime.MinValue;
